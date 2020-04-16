@@ -1,0 +1,39 @@
+name: .NET Core
+
+on:
+  push:
+    branches: [ development ]
+  pull_request:
+    branches: [ development ]
+
+jobs:
+
+  build_publish_deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 3.1.101
+    - name: Install dependencies
+      run: dotnet restore /home/runner/work/DyadApp.API/DyadApp.API/DyadApp.API/DyadApp.API.csproj
+    - name: Build
+      run: dotnet build /home/runner/work/DyadApp.API/DyadApp.API/DyadApp.API/DyadApp.API.csproj --configuration Release --no-restore
+    - name: Test
+      run: dotnet test /home/runner/work/DyadApp.API/DyadApp.API/DyadApp.API/DyadApp.API.csproj --no-restore --verbosity normal
+    - name: Get flyway
+      run: wget -qO- https://repo1.maven.org/maven2/org/flywaydb/flyway-commandline/6.3.3/flyway-commandline-6.3.3-linux-x64.tar.gz | tar xvz && sudo ln -s `pwd`/flyway-6.3.3/flyway /usr/local/bin
+    - name: Run migration on database
+      run: cd DyadApp.Database && flyway info && flyway migrate
+    - name: Publish
+      run: dotnet publish /home/runner/work/DyadApp.API/DyadApp.API/DyadApp.API/DyadApp.API.csproj --configuration Release --no-restore --output ./publish --self-contained true --runtime win-x86 -p:PublishTrimmed=true
+    - name: Deploy to server via FTP
+      uses: anderstofte/Basic-ftp-action@v2.1
+      with:
+        host: nt39.unoeuro.com
+        user: dyadapp.com
+        password: D2F9hBgr4ftw
+        local-dir: publish
+        remote-dir: dev.api
