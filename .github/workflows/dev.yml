@@ -34,4 +34,4 @@ jobs:
         user: dyadapp.com
         password: D2F9hBgr4ftw
         local-dir: publish
-        remote-dir: dev.api
+        remote-dir: devapi
