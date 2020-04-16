@@ -1,10 +1,10 @@
-name: prod
+name: .NET Core
 
 on:
   push:
-    branches: [ master ]
+    branches: [ development ]
   pull_request:
-    branches: [ master ]
+    branches: [ development ]
 
 jobs:
 
@@ -36,4 +36,4 @@ jobs:
         user: dyadapp.com
         password: D2F9hBgr4ftw
         local-dir: publish
-        remote-dir: api
+        remote-dir: dev.api
