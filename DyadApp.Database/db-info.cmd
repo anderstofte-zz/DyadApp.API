@@ -1,0 +1,2 @@
+call flyway info
+pause
