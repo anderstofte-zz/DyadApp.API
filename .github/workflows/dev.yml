@@ -1,10 +1,8 @@
-name: prod
+name: dev
 
 on:
   push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+    branches: [ development ]
 
 jobs:
 
@@ -28,7 +26,7 @@ jobs:
     - name: Run migration on database
       run: cd DyadApp.Database && flyway info && flyway migrate
     - name: Publish
-      run: dotnet publish /home/runner/work/DyadApp.API/DyadApp.API/DyadApp.API/DyadApp.API.csproj --configuration Release --no-restore --output ./publish --self-contained true --runtime win-x86 -p:PublishTrimmed=true
+      run: dotnet publish /home/runner/work/DyadApp.API/DyadApp.API/DyadApp.API/DyadApp.API.csproj --configuration Release --no-restore --output ./publish --self-contained true --runtime win-x86 -p:PublishTrimmed=true  -p:PublishSingleFile=true
     - name: Deploy to server via FTP
       uses: anderstofte/Basic-ftp-action@v2.1
       with:
@@ -36,4 +34,4 @@ jobs:
         user: dyadapp.com
         password: D2F9hBgr4ftw
         local-dir: publish
-        remote-dir: api
+        remote-dir: devapi
