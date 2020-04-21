@@ -8,6 +8,5 @@ CREATE TABLE [dbo].[Users](
       [Modified] [datetime2](7) NOT NULL,
       [ModifiedBy] [int] NOT NULL,
       [Created] [datetime2](7) NOT NULL,
-      [CreatedBy] [int] NOT NULL);
-
-
+      [CreatedBy] [int] NOT NULL,
+	  CONSTRAINT UC_Users_Email UNIQUE ([Email]));
