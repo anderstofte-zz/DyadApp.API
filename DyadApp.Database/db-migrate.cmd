@@ -1,2 +1,2 @@
-call flyway.exe migrate
+call flyway migrate
 pause
