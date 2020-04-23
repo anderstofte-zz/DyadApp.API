@@ -2,10 +2,12 @@
 using System.Diagnostics;
 using System.Threading.Tasks;
 using DyadApp.API.Data;
+using DyadApp.API.ViewModels;
+using HandlebarsDotNet;
 using MailKit.Net.Smtp;
-using MailKit.Security;
 using Microsoft.Extensions.Options;
 using MimeKit;
+
 
 namespace DyadApp.API.Services
 {
@@ -20,21 +22,16 @@ namespace DyadApp.API.Services
             _smtpClient = smtpClient;
         }
 
-        public async Task SendAsync()
+        public async Task SendAsync(string signupToken, CreateUserModel model)
         {
             var message = new MimeMessage();
             message.From.Add(new MailboxAddress("DyadApp support", "support@dyadapp.com"));
-            message.To.Add(new MailboxAddress("andersrta@gmail.com"));
+            message.To.Add(new MailboxAddress(model.Email));
             message.Subject = "Email verification - DyadApp";
-
-
-            var bodyBuilder = new BodyBuilder();
-            bodyBuilder.TextBody = "Sådan!";
-            message.Body = bodyBuilder.ToMessageBody();
+            message.Body = GenerateEmaiLBody(signupToken, model);
 
             try
             {
-
                 _smtpClient.ServerCertificateValidationCallback = (s, c, h, e) => true;
                 await _smtpClient.ConnectAsync(_smtpOptions.Host, _smtpOptions.Port, _smtpOptions.SecureSocketOptions);
                 await _smtpClient.AuthenticateAsync(_smtpOptions.UserName, _smtpOptions.Password);
@@ -45,6 +42,20 @@ namespace DyadApp.API.Services
             {
                 Debug.WriteLine(exception);
             }
+        }
+
+        private MimeEntity GenerateEmaiLBody(string signupToken, CreateUserModel model)
+        {
+            var template = System.IO.File.ReadAllText("EmailTemplates\\EmailVerification.html");
+            var compiledTemplate = Handlebars.Compile(template);
+            var templateData = new
+            {
+                name = model.Name,
+                verifyEmailUrl = "https://localhost:5002/emailverified?token=" + signupToken
+            };
+            var builder = new BodyBuilder();
+            builder.HtmlBody = compiledTemplate(templateData);
+            return builder.ToMessageBody();
         }
     }
 }

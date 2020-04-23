@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 using DyadApp.API.Data;
+using DyadApp.API.Extensions;
 using DyadApp.API.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -22,9 +24,25 @@ namespace DyadApp.API.Services
 
         public async Task<string> Authenticate(string email, string password)
         {
-            var user = await _context.Users.Where(x => x.Email == email && x.Password == password).SingleOrDefaultAsync();
+            var user = await _context.Users.Select(u => new User
+            {
+                Email = u.Email,
+                Password = new UserPassword
+                {
+                    Password = u.Password.Password,
+                    Salt = u.Password.Salt
+                },
+                Verified = true
+            }).Where(x => x.Email == email && x.Verified).SingleOrDefaultAsync();
+
 
             if (user == null)
+            {
+                return null;
+            }
+
+            var isSubmittedPasswordValid = user.Password.ValidatePassword(password);
+            if (!isSubmittedPasswordValid)
             {
                 return null;
             }

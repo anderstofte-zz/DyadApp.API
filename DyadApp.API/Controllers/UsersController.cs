@@ -1,13 +1,13 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using DyadApp.API.Converters;
 using DyadApp.API.Data;
+using DyadApp.API.Models;
 using DyadApp.API.Services;
 using DyadApp.API.ViewModels;
-using MailKit.Net.Smtp;
-using MailKit.Security;
+
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using MimeKit;
@@ -58,10 +58,23 @@ namespace DyadApp.API.Controllers
             user.Created = currentDateTime;
             user.CreatedBy = 0;
 
+            var signupToken = GenerateUniqueSignupToken();
+            user.Signups.Add(new Signup
+            {
+                Token = signupToken,
+                ExpirationDate = DateTime.UtcNow.AddDays(2),
+                AcceptDate = null,
+                Modified = currentDateTime,
+                ModifiedBy = 0,
+                Created = currentDateTime,
+                CreatedBy = 0
+            });
+
             _context.Users.Add(user);
+
             await _context.SaveChangesAsync();
 
-            await _emailService.SendAsync();
+            await _emailService.SendAsync(signupToken, model);
 
             return Ok();
         }
@@ -69,6 +82,17 @@ namespace DyadApp.API.Controllers
         private bool UserWithProvidedEmailAlreadyExists(string email)
         {
             return _context.Users.Any(x => x.Email == email);
+        }
+
+        private string GenerateUniqueSignupToken()
+        {
+            var bytes = new byte[40];
+            using (var provider = new RNGCryptoServiceProvider())
+                provider.GetBytes(bytes);
+
+            var uniqueToken = BitConverter.ToString(bytes, 0).Replace("-", "");
+
+            return uniqueToken;
         }
     }
 }
