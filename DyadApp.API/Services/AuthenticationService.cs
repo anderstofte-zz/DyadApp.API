@@ -9,6 +9,7 @@ using DyadApp.API.Data;
 using DyadApp.API.Extensions;
 using DyadApp.API.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 
 namespace DyadApp.API.Services
@@ -16,10 +17,12 @@ namespace DyadApp.API.Services
     public class AuthenticationService : IAuthenticationService
     {
         private readonly DyadAppContext _context;
+        private readonly ISecretKeyService _keyService;
 
-        public AuthenticationService(DyadAppContext context)
+        public AuthenticationService(DyadAppContext context, ISecretKeyService keyService)
         {
             _context = context;
+            _keyService = keyService;
         }
 
         public async Task<AuthenticationTokens> Authenticate(string email, string password)
@@ -86,9 +89,9 @@ namespace DyadApp.API.Services
             return something;
         }
 
-        private static SecurityTokenDescriptor SetUpToken(int userId)
+        private SecurityTokenDescriptor SetUpToken(int userId)
         {
-            var key = Encoding.ASCII.GetBytes(System.IO.File.ReadAllText("key.txt"));
+            var key = Encoding.ASCII.GetBytes(_keyService.GetSecretKey());
             return new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(new Claim[]

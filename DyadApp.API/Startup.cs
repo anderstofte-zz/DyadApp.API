@@ -33,7 +33,7 @@ namespace DyadApp.API
             services.AddCors();
 
 
-            var key = Encoding.ASCII.GetBytes(System.IO.File.ReadAllText("key.txt"));
+            var key = Encoding.ASCII.GetBytes(Configuration.GetSection("TokenKey").Value);
             services.AddAuthentication(x =>
                 {
                     x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -65,13 +65,13 @@ namespace DyadApp.API
                     };
                 });
 
-
             services.AddScoped<IAuthenticationService, AuthenticationService>();
 
             services.Configure<SmtpOptions>(Configuration.GetSection("Smtp"));
             services.AddTransient<SmtpClient>();
 
             services.AddTransient<IEmailService, EmailService>();
+            services.AddTransient<ISecretKeyService, SecretKeyService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

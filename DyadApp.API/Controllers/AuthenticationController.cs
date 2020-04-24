@@ -16,11 +16,12 @@ namespace DyadApp.API.Controllers
     {
         private readonly DyadAppContext _context;
         private readonly IAuthenticationService _auth;
-
-        public AuthenticationController(DyadAppContext context, IAuthenticationService auth)
+        private readonly ISecretKeyService _keyService;
+        public AuthenticationController(DyadAppContext context, IAuthenticationService auth, ISecretKeyService keyService)
         {
             _context = context;
             _auth = auth;
+            _keyService = keyService;
         }
 
         [HttpPost]
@@ -63,7 +64,7 @@ namespace DyadApp.API.Controllers
             int userId;
             try
             {
-                userId = authenticationTokens.GetUserIdFromClaims();
+                userId = authenticationTokens.GetUserIdFromClaims(_keyService.GetSecretKey());
             }
             catch (Exception)
             {

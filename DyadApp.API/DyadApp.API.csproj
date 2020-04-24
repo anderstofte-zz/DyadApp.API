@@ -15,9 +15,4 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="3.1.3" />
     <PackageReference Include="MimeKit" Version="2.6.0" />
   </ItemGroup>
-  <ItemGroup>
-    <None Update="key.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
 </Project>
