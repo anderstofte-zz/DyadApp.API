@@ -1,10 +1,11 @@
 ﻿using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
+using DyadApp.API.Models;
 
 namespace DyadApp.API.Services
 {
     public interface IAuthenticationService
     {
-        Task<string> Authenticate(string email, string password);
+        Task<AuthenticationTokens> Authenticate(string email, string password);
+        Task<AuthenticationTokens> GenerateTokens(int userId);
     }
 }

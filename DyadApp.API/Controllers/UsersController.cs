@@ -23,6 +23,7 @@ namespace DyadApp.API.Controllers
             _auth = auth;
         }
 
+        [HttpGet]
         public string TestAuthorization()
         {
             return "Authorized!";
