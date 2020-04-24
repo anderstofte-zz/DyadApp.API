@@ -5,9 +5,9 @@ using DyadApp.API.Data;
 using DyadApp.API.ViewModels;
 using HandlebarsDotNet;
 using MailKit.Net.Smtp;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using MimeKit;
-
 
 namespace DyadApp.API.Services
 {
@@ -15,11 +15,13 @@ namespace DyadApp.API.Services
     {
         private readonly SmtpClient _smtpClient;
         private readonly SmtpOptions _smtpOptions;
+        private readonly IConfiguration _configuration;
 
-        public EmailService(IOptions<SmtpOptions> smtpOptions, SmtpClient smtpClient)
+        public EmailService(IOptions<SmtpOptions> smtpOptions, SmtpClient smtpClient, IConfiguration configuration)
         {
             _smtpOptions = smtpOptions.Value;
             _smtpClient = smtpClient;
+            _configuration = configuration;
         }
 
         public async Task SendAsync(string signupToken, CreateUserModel model)
@@ -48,13 +50,13 @@ namespace DyadApp.API.Services
         {
             var template = System.IO.File.ReadAllText("EmailTemplates\\EmailVerification.html");
             var compiledTemplate = Handlebars.Compile(template);
+            var webAppAddress = _configuration.GetSection("WebAppBaseAddress").Value;
             var templateData = new
             {
                 name = model.Name,
-                verifyEmailUrl = "https://localhost:5002/emailverified?token=" + signupToken
+                verifyEmailUrl = $"{webAppAddress}emailverified?token=" + signupToken
             };
-            var builder = new BodyBuilder();
-            builder.HtmlBody = compiledTemplate(templateData);
+            var builder = new BodyBuilder {HtmlBody = compiledTemplate(templateData)};
             return builder.ToMessageBody();
         }
     }

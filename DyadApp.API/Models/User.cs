@@ -13,5 +13,6 @@ namespace DyadApp.API.Models
         public byte[] ProfileImage { get; set; }
         public bool Verified { get; set; }
         public List<Signup> Signups { get; set; }
+        public List<RefreshToken> RefreshTokens { get; set; }
     }
 }

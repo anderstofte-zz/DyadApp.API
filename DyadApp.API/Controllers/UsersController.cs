@@ -28,6 +28,7 @@ namespace DyadApp.API.Controllers
             _emailService = emailService;
         }
 
+        [HttpGet]
         public string TestAuthorization()
         {
             return "Authorized!";
