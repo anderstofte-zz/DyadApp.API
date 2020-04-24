@@ -3,6 +3,7 @@ using System.Text;
 using System.Threading.Tasks;
 using DyadApp.API.Data;
 using DyadApp.API.Services;
+using MailKit.Net.Smtp;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -66,6 +67,11 @@ namespace DyadApp.API
 
 
             services.AddScoped<IAuthenticationService, AuthenticationService>();
+
+            services.Configure<SmtpOptions>(Configuration.GetSection("Smtp"));
+            services.AddTransient<SmtpClient>();
+
+            services.AddTransient<IEmailService, EmailService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
