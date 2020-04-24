@@ -8,9 +8,9 @@ namespace DyadApp.API.Extensions
 {
     public static class AuthenticationTokenExtensions
     {
-        public static int GetUserIdFromClaims(this AuthenticationTokens tokens)
+        public static int GetUserIdFromClaims(this AuthenticationTokens tokens, string key)
         {
-            var tokenValidationParameters = GenerateTokenValidationParameters();
+            var tokenValidationParameters = GenerateTokenValidationParameters(key);
             var tokenHandler = new JwtSecurityTokenHandler();
 
             var claims = tokenHandler.ValidateToken(tokens.AccessToken, tokenValidationParameters, out var validatedToken);
@@ -25,15 +25,15 @@ namespace DyadApp.API.Extensions
             return int.Parse(claims.Identity.Name);
         }
 
-        private static TokenValidationParameters GenerateTokenValidationParameters()
+        private static TokenValidationParameters GenerateTokenValidationParameters(string key)
         {
-            var key = Encoding.ASCII.GetBytes(System.IO.File.ReadAllText("key.txt"));
+            var encodedKey = Encoding.ASCII.GetBytes(key);
             return new TokenValidationParameters
             {
                 ValidateAudience = false,
                 ValidateIssuer = false,
                 ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(key),
+                IssuerSigningKey = new SymmetricSecurityKey(encodedKey),
                 ValidateLifetime = false
             };
         }
