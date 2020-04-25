@@ -46,7 +46,7 @@ namespace DyadApp.API.Controllers
 
             if (signup == null)
             {
-                return Unauthorized("Signup token is invalid.")
+                return Unauthorized("Signup token is invalid.");
             }
 
             var user = await _context.Users.Where(u => u.UserId == signup.UserId).SingleOrDefaultAsync();
