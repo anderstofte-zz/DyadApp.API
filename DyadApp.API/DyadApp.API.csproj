@@ -16,7 +16,7 @@
     <PackageReference Include="MimeKit" Version="2.6.0" />
   </ItemGroup>
   <ItemGroup>
-    <None Update="EmailTemplates\EmailVerification.html">
+    <None Include="wwwroot\EmailTemplates\EmailVerification.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
