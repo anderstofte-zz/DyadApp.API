@@ -24,7 +24,7 @@ namespace DyadApp.API.Services
             _configuration = configuration;
         }
 
-        public async Task SendAsync(string signupToken, CreateUserModel model)
+        public async Task<bool> SendAsync(string signupToken, CreateUserModel model)
         {
             var message = new MimeMessage();
             message.From.Add(new MailboxAddress("DyadApp support", "support@dyadapp.com"));
@@ -40,10 +40,12 @@ namespace DyadApp.API.Services
                 await _smtpClient.SendAsync(message);
                 await _smtpClient.DisconnectAsync(true);
             }
-            catch (Exception exception)
+            catch (Exception)
             {
-                Debug.WriteLine(exception);
+                return false;
             }
+
+            return true;
         }
 
         private MimeEntity GenerateEmaiLBody(string signupToken, CreateUserModel model)
