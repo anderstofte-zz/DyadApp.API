@@ -5,6 +5,6 @@ namespace DyadApp.API.Services
 {
     public interface IEmailService
     {
-        Task SendAsync(string signupToken, CreateUserModel model);
+        Task<bool> SendAsync(string signupToken, CreateUserModel model);
     }
 }

@@ -73,7 +73,11 @@ namespace DyadApp.API.Controllers
 
             _context.Users.Add(user);
 
-            await _emailService.SendAsync(signupToken, model);
+            var emailIsSent = await _emailService.SendAsync(signupToken, model);
+            if (!emailIsSent)
+            {
+                return BadRequest("Email could not be sent.");
+            }
             await _context.SaveChangesAsync();
 
             return Ok();
