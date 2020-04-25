@@ -48,7 +48,7 @@ namespace DyadApp.API.Services
 
         private MimeEntity GenerateEmaiLBody(string signupToken, CreateUserModel model)
         {
-            var template = System.IO.File.ReadAllText("EmailTemplates\\EmailVerification.html");
+            var template = System.IO.File.ReadAllText("wwwroot\\EmailTemplates\\EmailVerification.html");
             var compiledTemplate = Handlebars.Compile(template);
             var webAppAddress = _configuration.GetSection("WebAppBaseAddress").Value;
             var templateData = new

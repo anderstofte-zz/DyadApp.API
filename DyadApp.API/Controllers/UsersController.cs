@@ -73,9 +73,8 @@ namespace DyadApp.API.Controllers
 
             _context.Users.Add(user);
 
-            await _context.SaveChangesAsync();
-
             await _emailService.SendAsync(signupToken, model);
+            await _context.SaveChangesAsync();
 
             return Ok();
         }
