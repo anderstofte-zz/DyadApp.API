@@ -38,7 +38,7 @@ namespace DyadApp.API.Controllers
         }
 
         [HttpPost("VerifySignupToken")]
-        public async Task<bool> VerifyUser([FromBody] string token)
+        public async Task<IActionResult> VerifyUser([FromBody] string token)
         {
             var signup = await _context.Signups
                 .Where(s => s.Token == token && s.ExpirationDate > DateTime.UtcNow && s.AcceptDate == null)
@@ -46,16 +46,17 @@ namespace DyadApp.API.Controllers
 
             if (signup == null)
             {
-                return false;
+                return Unauthorized("Signup token is invalid.")
             }
 
             var user = await _context.Users.Where(u => u.UserId == signup.UserId).SingleOrDefaultAsync();
+
 
             signup.AcceptDate = DateTime.UtcNow;
             user.Verified = true;
             await _context.SaveChangesAsync();
 
-            return true;
+            return Ok();
         }
 
         [HttpPost("Refresh")]
