@@ -1,14 +1,101 @@
 ﻿<!DOCTYPE html>
 <html>
+
 <head>
-    <meta charset="utf-8" />
-    <title>DyadApp - Email verification</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dyad - Verificer konto</title>
+    <style>
+
+        /* A simple css reset */
+        body, table, thead, tbody, tr, td, img {
+            padding: 0;
+            margin: 0;
+            border: none;
+            border-spacing: 0px;
+            border-collapse: collapse;
+            vertical-align: top;
+            text-align: center;
+        }
+
+        /* Add some padding for small screens */
+        .wrapper {
+            padding-left: 10px;
+            padding-right: 10px;
+        }
+
+        h1, h2, h3, h4, h5, h6, p, #submit-button {
+            margin: 0;
+            padding: 0;
+            padding-bottom: 20px;
+            line-height: 1.6;
+            font-family: 'Roboto', 'Arial', sans-serif;
+        }
+
+        p, a, li, #submit-button {
+            font-family: 'Roboto', 'Arial', sans-serif;
+        }
+
+        img {
+            width: 100%;
+            display: block;
+        }
+
+        @media only screen and (max-width: 620px) {
+
+            .wrapper .section {
+                width: 100%;
+            }
+
+            .wrapper .column {
+                width: 100%;
+                display: block;
+            }
+        }
+
+        #submit-button {
+            background: #20cda2;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 10px 40px;
+            cursor: pointer;
+            outline: inherit;
+            font-size: 1rem;
+            -webkit-box-shadow: 0px 0px 3px 0px rgba(0,0,0,0.75);
+            -moz-box-shadow: 0px 0px 3px 0px rgba(0,0,0,0.75);
+            box-shadow: 0px 0px 3px 0px rgba(0,0,0,0.75);
+            text-decoration: none;
+        }
+    </style>
 </head>
+
 <body>
-<div class="mt-3">
-    <h3>{{ name }}, you are almost there!</h3>
-    <p>Before you can use DyadApp you need to verify your email address.</p>
-    <a href="{{ verifyEmailUrl }}">Verify email</a>
-</div>
+    <table width="100%" style="margin-top: 50px">
+        <tbody>
+            <tr>
+                <td class="wrapper" width="100%" align="center">
+                    <!-- Header image -->
+                    <table class="section header" cellpadding="0" cellspacing="0" width="100%">
+                        <tr style="width:100%">
+                            <td class="column" style="width:100%">
+                                <table style="width:100%">
+                                    <tbody style="width:100%">
+                                        <tr style="width:100%">
+                                            <td style="width: 100%; padding-bottom: 30px">
+                                                <h2>Du er der næsten!</h2>
+                                                <p>Før du kan starte med at bruge Dyad skal vi verificere din email.</p>
+                                                <a href="{{ verifyEmailUrl }}" id="submit-button">Verificer email</a>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </tbody>
+    </table>
 </body>
 </html>
