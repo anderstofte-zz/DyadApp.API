@@ -51,7 +51,6 @@ namespace DyadApp.API.Controllers
 
             var user = await _context.Users.Where(u => u.UserId == signup.UserId).SingleOrDefaultAsync();
 
-
             signup.AcceptDate = DateTime.UtcNow;
             user.Verified = true;
             await _context.SaveChangesAsync();
