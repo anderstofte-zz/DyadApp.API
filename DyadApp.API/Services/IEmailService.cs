@@ -1,10 +1,11 @@
 ﻿using System.Threading.Tasks;
-using DyadApp.API.ViewModels;
+using DyadApp.Emails;
+using Microsoft.AspNetCore.Mvc;
 
 namespace DyadApp.API.Services
 {
     public interface IEmailService
     {
-        Task<string> SendAsync(string signupToken, CreateUserModel model);
+        Task<ActionResult> SendEmail<T>(T model, EmailTypeEnum emailType);
     }
 }

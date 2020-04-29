@@ -1,12 +1,13 @@
 ﻿using System;
-using System.Linq;
 using System.Threading.Tasks;
-using DyadApp.API.Data;
+using DyadApp.API.Data.Repositories;
 using DyadApp.API.Extensions;
+using DyadApp.API.Helpers;
 using DyadApp.API.Models;
 using DyadApp.API.Services;
+using DyadApp.API.ViewModels;
+using DyadApp.Emails;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace DyadApp.API.Controllers
 {
@@ -14,48 +15,58 @@ namespace DyadApp.API.Controllers
     [Route("[controller]")]
     public class AuthenticationController : ControllerBase
     {
-        private readonly DyadAppContext _context;
-        private readonly IAuthenticationService _auth;
+        private readonly IAuthenticationRepository _authenticationRepository;
+        private readonly IUserRepository _userRepository;
+        private readonly IAuthenticationService _authenticationService;
         private readonly ISecretKeyService _keyService;
-        public AuthenticationController(DyadAppContext context, IAuthenticationService auth, ISecretKeyService keyService)
+        private readonly IEmailService _emailService;
+        public AuthenticationController(IAuthenticationService authenticationService, ISecretKeyService keyService, IEmailService emailService, IAuthenticationRepository authenticationRepository, IUserRepository userRepository)
         {
-            _context = context;
-            _auth = auth;
+            _authenticationService = authenticationService;
             _keyService = keyService;
+            _emailService = emailService;
+            _authenticationRepository = authenticationRepository;
+            _userRepository = userRepository;
         }
 
         [HttpPost]
         public async Task<IActionResult> AuthenticateUser(AuthenticationUserModel model)
         {
-            var something = await _auth.Authenticate(model.Email, model.Password);
+            var authenticationTokens = await _authenticationService.Authenticate(model.Email, model.Password);
 
-            if (something == null)
+            if (authenticationTokens == null)
             {
                 return Unauthorized();
             }
 
-            return Ok(something);
+            return Ok(authenticationTokens);
         }
 
         [HttpPost("VerifySignupToken")]
         public async Task<IActionResult> VerifyUser([FromBody] string token)
         {
-            var signup = await _context.Signups
-                .Where(s => s.Token == token && s.ExpirationDate > DateTime.UtcNow && s.AcceptDate == null)
-                .SingleOrDefaultAsync();
+            var signup = await _authenticationRepository.GetSignupByToken(token);
 
             if (signup == null)
             {
                 return Unauthorized("Signup token is invalid.");
             }
 
-            var user = await _context.Users.Where(u => u.UserId == signup.UserId).SingleOrDefaultAsync();
+            var user = await _userRepository.GetUserById(signup.UserId);
 
             signup.AcceptDate = DateTime.UtcNow;
             user.Verified = true;
-            await _context.SaveChangesAsync();
 
-            return Ok();
+            try
+            {
+                await _userRepository.SaveChangesAsync();
+                await _authenticationRepository.SaveChangesAsync();
+                return Ok();
+            }
+            catch (Exception)
+            {
+                return BadRequest();
+            }
         }
 
         [HttpPost("Refresh")]
@@ -77,19 +88,69 @@ namespace DyadApp.API.Controllers
                 return Unauthorized("Refresh token is invalid.");
             }
 
-            var newTokens = await _auth.GenerateTokens(userId);
-
-            _context.RefreshTokens.Remove(refreshToken.Result);
-            await _context.SaveChangesAsync();
+            var newTokens = await _authenticationService.GenerateTokens(userId);
+            await _authenticationRepository.DeleteTokenAsync(refreshToken);
 
             return Ok(newTokens);
         }
 
         private async Task<RefreshToken> GetRefreshToken(string refreshToken, int userId)
         {
-            return await _context.RefreshTokens
-                .Where(x => x.UserId == userId && x.Token == refreshToken)
-                .SingleOrDefaultAsync();
+            return await _authenticationRepository.GetRefreshToken(userId, refreshToken);
+        }
+
+        [HttpPost("ResetPassword")]
+        public async Task<IActionResult> ResetPassword([FromBody]ResetPasswordRequestModel model)
+        {
+            var user = await _userRepository.GetByEmail(model.Email);
+
+            if (user == null)
+            {
+                return BadRequest();
+            }
+
+            var token = TokenHelper.GenerateResetPasswordToken();
+
+            var resetPasswordToken = new ResetPasswordToken
+            {
+                Token = token,
+                ExpirationDate = DateTime.UtcNow.AddMinutes(30),
+                UserId = user.UserId
+            };
+
+            await _authenticationRepository.CreateTokenAsync(resetPasswordToken);
+
+            var resetPasswordRequest = new ResetPasswordRequest
+            {
+                Email = model.Email,
+                Token = token
+            };
+
+            return await _emailService.SendEmail(resetPasswordRequest, EmailTypeEnum.PasswordRecovery);
+        }
+
+        [HttpPost("UpdatePassword")]
+        public async Task<IActionResult> UpdatePassword([FromBody] UpdatePasswordModel model)
+        {
+            var resetPasswordToken = await _authenticationRepository.GetResetPasswordToken(model.Token);
+            if (resetPasswordToken == null)
+            {
+                return BadRequest();
+            }
+
+            var userPassword = await _userRepository.GetUserPasswordByUserId(resetPasswordToken.UserId);
+            if (userPassword == null)
+            {
+                return BadRequest();
+            }
+
+            var hashedPassword = PasswordHelper.GenerateHashedPassword(model.Password);
+            userPassword.Password = hashedPassword.Password;
+            userPassword.Salt = hashedPassword.Salt;
+
+            await _authenticationRepository.DeleteTokenAsync(resetPasswordToken);
+
+            return Ok();
         }
     }
 }

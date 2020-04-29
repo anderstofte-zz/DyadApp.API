@@ -14,5 +14,6 @@ namespace DyadApp.API.Models
         public bool Verified { get; set; }
         public List<Signup> Signups { get; set; }
         public List<RefreshToken> RefreshTokens { get; set; }
+        public List<ResetPasswordToken> ResetPasswordTokens { get; set; }
     }
 }

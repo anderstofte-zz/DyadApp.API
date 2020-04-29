@@ -1,16 +1,14 @@
 ﻿using System;
-using System.Linq;
-using System.Security.Cryptography;
 using System.Threading.Tasks;
 using DyadApp.API.Converters;
-using DyadApp.API.Data;
+using DyadApp.API.Data.Repositories;
+using DyadApp.API.Helpers;
 using DyadApp.API.Models;
 using DyadApp.API.Services;
 using DyadApp.API.ViewModels;
-
+using DyadApp.Emails;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using MimeKit;
 
 namespace DyadApp.API.Controllers
 {
@@ -19,13 +17,13 @@ namespace DyadApp.API.Controllers
     [Route("[controller]")]
     public class UsersController : ControllerBase
     {
-        private readonly DyadAppContext _context;
         private readonly IEmailService _emailService;
+        private readonly IUserRepository _repository;
 
-        public UsersController(DyadAppContext context, IEmailService emailService)
+        public UsersController(IEmailService emailService, IUserRepository repository)
         {
-            _context = context;
             _emailService = emailService;
+            _repository = repository;
         }
 
         [HttpGet]
@@ -34,71 +32,33 @@ namespace DyadApp.API.Controllers
             return "Authorized!";
         }
 
-        
         [HttpPost]
         [AllowAnonymous]
         public async Task<ActionResult> CreateUser([FromBody] CreateUserModel model)
         {
-            if (!ModelState.IsValid)
+            if (!ModelState.IsValid || await UserWithProvidedEmailAlreadyExists(model.Email))
             {
                 return BadRequest();
             }
 
-            if (UserWithProvidedEmailAlreadyExists(model.Email))
-            {
-                // TODO: returner med en anden besked eller?
-                return BadRequest("The email already exists.");
-            }
-
             var user = model.ToUser();
-            var currentDateTime = DateTime.Now;
 
-            // TODO: Ryk det her ud i noget generisk, så man ikke skal gøre det ved hvert endpoint
-            user.Modified = currentDateTime;
-            user.ModifiedBy = 0;
-            user.Created = currentDateTime;
-            user.CreatedBy = 0;
-
-            var signupToken = GenerateUniqueSignupToken();
+            var signupToken = TokenHelper.GenerateSignupToken();
             user.Signups.Add(new Signup
             {
                 Token = signupToken,
                 ExpirationDate = DateTime.UtcNow.AddDays(2),
-                AcceptDate = null,
-                Modified = currentDateTime,
-                ModifiedBy = 0,
-                Created = currentDateTime,
-                CreatedBy = 0
+                AcceptDate = null
             });
 
-            _context.Users.Add(user);
+            await _repository.CreateAsync(user);
 
-            var emailIsSent = await _emailService.SendAsync(signupToken, model);
-
-            if (emailIsSent != "")
-            {
-                return BadRequest(emailIsSent);
-            }
-
-            await _context.SaveChangesAsync();
-
-            return Ok();
+            return await _emailService.SendEmail(user, EmailTypeEnum.Verification);
         }
 
-        private bool UserWithProvidedEmailAlreadyExists(string email)
+        private async Task<bool> UserWithProvidedEmailAlreadyExists(string email)
         {
-            return _context.Users.Any(x => x.Email == email);
-        }
-
-        private string GenerateUniqueSignupToken()
-        {
-            var bytes = new byte[40];
-            using (var provider = new RNGCryptoServiceProvider())
-                provider.GetBytes(bytes);
-
-            var uniqueToken = BitConverter.ToString(bytes, 0).Replace("-", "");
-
-            return uniqueToken;
+            return await _repository.DoesUserExists(email);
         }
     }
 }

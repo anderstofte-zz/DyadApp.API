@@ -1,13 +1,13 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Threading.Tasks;
 using DyadApp.API.Data;
-using DyadApp.API.ViewModels;
-using HandlebarsDotNet;
+using DyadApp.API.Models;
 using MailKit.Net.Smtp;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
-using MimeKit;
+using DyadApp.Emails;
+using DyadApp.Emails.Models.EmailTypes;
+using Microsoft.AspNetCore.Mvc;
 
 namespace DyadApp.API.Services
 {
@@ -24,42 +24,53 @@ namespace DyadApp.API.Services
             _configuration = configuration;
         }
 
-        public async Task<string> SendAsync(string signupToken, CreateUserModel model)
+        public async Task<ActionResult> SendEmail<T>(T model, EmailTypeEnum emailType)
         {
-            var message = new MimeMessage();
-            message.From.Add(new MailboxAddress("DyadApp support", "support@dyadapp.com"));
-            message.To.Add(new MailboxAddress(model.Email));
-            message.Subject = "Email verification - DyadApp";
-            message.Body = GenerateEmaiLBody(signupToken, model);
+            BaseEmail emailConfiguration = emailType switch
+            {
+                EmailTypeEnum.Verification => ToVerificationEmail(model as User),
+                EmailTypeEnum.PasswordRecovery => ToRecoveryEmail(model as ResetPasswordRequest),
+                _ => throw new ArgumentOutOfRangeException(nameof(emailType), emailType, null)
+            };
+
+            emailConfiguration.WebAppAddress = _configuration.GetSection("WebAppBaseAddress").Value;
+            var email = EmailGenerator.GenerateEmail(emailConfiguration, emailType);
 
             try
             {
                 _smtpClient.ServerCertificateValidationCallback = (s, c, h, e) => true;
                 await _smtpClient.ConnectAsync(_smtpOptions.Host, _smtpOptions.Port, _smtpOptions.SecureSocketOptions);
                 await _smtpClient.AuthenticateAsync(_smtpOptions.UserName, _smtpOptions.Password);
-                await _smtpClient.SendAsync(message);
+                await _smtpClient.SendAsync(email);
                 await _smtpClient.DisconnectAsync(true);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return ex.Message;
+                return new BadRequestResult();
             }
 
-            return "";
+            return new OkResult();
         }
 
-        private MimeEntity GenerateEmaiLBody(string signupToken, CreateUserModel model)
+        private PasswordRecovery ToRecoveryEmail(ResetPasswordRequest model)
         {
-            var template = System.IO.File.ReadAllText("wwwroot\\EmailTemplates\\EmailVerification.html");
-            var compiledTemplate = Handlebars.Compile(template);
-            var webAppAddress = _configuration.GetSection("WebAppBaseAddress").Value;
-            var templateData = new
+            return new PasswordRecovery
             {
-                name = model.Name,
-                verifyEmailUrl = $"{webAppAddress}emailverified?token=" + signupToken
+                To = model.Email,
+                Subject = "Gendan adgangskode - Dyad",
+                ResetPasswordUrl = _configuration.GetSection("WebAppBaseAddress").Value + "resetpassword?token=" + model.Token
             };
-            var builder = new BodyBuilder {HtmlBody = compiledTemplate(templateData)};
-            return builder.ToMessageBody();
+        }
+
+        public Verification ToVerificationEmail(User model)
+        {
+            return new Verification
+            {
+                Name = model.Name,
+                To = model.Email,
+                Subject = "Email verificering - Dyad",
+                VerifySignupUrl = _configuration.GetSection("WebAppBaseAddress").Value + "emailverified?token=" + model.Signups[0].Token
+            };
         }
     }
 }

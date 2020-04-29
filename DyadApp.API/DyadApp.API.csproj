@@ -7,6 +7,9 @@
 	<AspNetCoreModuleName>AspNetCoreModule</AspNetCoreModuleName>
   </PropertyGroup>
   <ItemGroup>
+    <Content Remove="wwwroot\EmailTemplates\PasswordRecovery.html" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="Handlebars.Net" Version="1.10.1" />
     <PackageReference Include="MailKit" Version="2.6.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="3.1.3" />
@@ -19,8 +22,12 @@
     <None Include="wwwroot\EmailTemplates\EmailVerification.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="wwwroot\EmailTemplates\PasswordRecovery.html" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="wwwroot\img\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\DyadApp.Emails\DyadApp.Emails.csproj" />
   </ItemGroup>
 </Project>

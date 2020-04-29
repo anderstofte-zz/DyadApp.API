@@ -12,7 +12,7 @@ CREATE TABLE [dbo].[Users](
 	  CONSTRAINT UC_Users_Email UNIQUE ([Email]));
 	  
 CREATE TABLE [dbo].[UserPasswords](   
-  [PasswordId] [int] IDENTITY(1,1) PRIMARY KEY NOT NULL,
+  [UserPasswordId] [int] IDENTITY(1,1) PRIMARY KEY NOT NULL,
   [UserId] [int] NOT NULL,
   [Password] [varchar](100) NOT NULL,
   [Salt] [varchar](100) NOT NULL,
