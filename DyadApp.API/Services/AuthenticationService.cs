@@ -1,46 +1,32 @@
 ﻿using System;
 using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
 using System.Security.Claims;
-using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
-using DyadApp.API.Data;
+using DyadApp.API.Data.Repositories;
 using DyadApp.API.Extensions;
+using DyadApp.API.Helpers;
 using DyadApp.API.Models;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 
 namespace DyadApp.API.Services
 {
     public class AuthenticationService : IAuthenticationService
     {
-        private readonly DyadAppContext _context;
+        private readonly IAuthenticationRepository _authenticationRepository;
+        private readonly IUserRepository _userRepository;
         private readonly ISecretKeyService _keyService;
 
-        public AuthenticationService(DyadAppContext context, ISecretKeyService keyService)
+        public AuthenticationService(ISecretKeyService keyService, IAuthenticationRepository authenticationRepository, IUserRepository userRepository)
         {
-            _context = context;
             _keyService = keyService;
+            _authenticationRepository = authenticationRepository;
+            _userRepository = userRepository;
         }
 
         public async Task<AuthenticationTokens> Authenticate(string email, string password)
         {
-            var user = await _context.Users.Select(u => new User
-            {
-                UserId = u.UserId,
-                Email = u.Email,
-                Password = new UserPassword
-                {
-                    Password = u.Password.Password,
-                    Salt = u.Password.Salt
-                },
-                Verified = true,
-                RefreshTokens = u.RefreshTokens
-            }).Where(x => x.Email == email && x.Verified).SingleOrDefaultAsync();
-
-
+            var user = await _userRepository.GetByEmail(email);
             if (user == null)
             {
                 return null;
@@ -52,21 +38,7 @@ namespace DyadApp.API.Services
                 return null;
             }
 
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var accessToken = tokenHandler.CreateToken(SetUpToken(user.UserId));
-
-            var refreshToken = GenerateRefreshToken(user.UserId);
-            _context.RefreshTokens.Add(refreshToken);
-
-            await _context.SaveChangesAsync();
-
-            var something = new AuthenticationTokens
-            {
-                AccessToken = tokenHandler.WriteToken(accessToken),
-                RefreshToken = refreshToken.Token
-            };
-
-            return something;
+            return await GenerateTokens(user.UserId);
         }
 
         public async Task<AuthenticationTokens> GenerateTokens(int userId)
@@ -74,19 +46,17 @@ namespace DyadApp.API.Services
             var tokenHandler = new JwtSecurityTokenHandler();
             var accessToken = tokenHandler.CreateToken(SetUpToken(userId));
 
-            var refreshToken = GenerateRefreshToken(userId);
-            
-            _context.RefreshTokens.Add(refreshToken);
+            var refreshToken = RefreshTokenHelper.Generate(userId);
 
-            await _context.SaveChangesAsync();
+            await _authenticationRepository.CreateTokenAsync(refreshToken);
 
-            var something = new AuthenticationTokens
+            var authenticationTokens = new AuthenticationTokens
             {
                 AccessToken = tokenHandler.WriteToken(accessToken),
                 RefreshToken = refreshToken.Token
             };
 
-            return something;
+            return authenticationTokens;
         }
 
         private SecurityTokenDescriptor SetUpToken(int userId)
@@ -102,27 +72,6 @@ namespace DyadApp.API.Services
                 IssuedAt = DateTime.UtcNow,
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
             };
-        }
-
-        private RefreshToken GenerateRefreshToken(int userId)
-        {
-            var randomNumber = new byte[32];
-            using var generator = RandomNumberGenerator.Create();
-            generator.GetBytes(randomNumber);
-
-            var currentDateTime = DateTime.UtcNow;
-            var refreshToken = new RefreshToken
-            {
-                UserId = userId,
-                Token = Convert.ToBase64String(randomNumber),
-                ExpirationDate = DateTime.UtcNow.AddDays(31),
-                Modified = currentDateTime,
-                ModifiedBy = 0,
-                Created = currentDateTime,
-                CreatedBy = 0
-            };
-
-            return refreshToken;
         }
     }
 }

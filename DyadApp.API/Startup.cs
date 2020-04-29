@@ -2,11 +2,13 @@ using System;
 using System.Text;
 using System.Threading.Tasks;
 using DyadApp.API.Data;
+using DyadApp.API.Data.Repositories;
 using DyadApp.API.Services;
 using MailKit.Net.Smtp;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -72,6 +74,12 @@ namespace DyadApp.API
 
             services.AddTransient<IEmailService, EmailService>();
             services.AddTransient<ISecretKeyService, SecretKeyService>();
+
+            services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+            services.AddTransient<IUserService, UserService>();
+
+            services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<IAuthenticationRepository, AuthenticationRepository>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
