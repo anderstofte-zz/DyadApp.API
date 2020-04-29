@@ -5,3 +5,5 @@ Build status\
 Status for testing will come
 
 Some description....
+
+TODO: et endpoint der beskriver alle endpoints?
