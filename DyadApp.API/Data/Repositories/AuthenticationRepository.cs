@@ -38,6 +38,22 @@ namespace DyadApp.API.Data.Repositories
             }).Where(x => x.Email == email && x.Verified).SingleOrDefaultAsync();
         }
 
+        public async Task<User> GetUserCredentialsByEmail(string email)
+        {
+            return await _context.Users.Select(u => new User
+            {
+                UserId = u.UserId,
+                Email = u.Email,
+                Password = new UserPassword
+                {
+                    Password = u.Password.Password,
+                    Salt = u.Password.Salt
+                },
+                Verified = u.Verified,
+                RefreshTokens = u.RefreshTokens
+            }).Where(x => x.Email == email && x.Verified).SingleOrDefaultAsync();
+        }
+
         public async Task CreateTokenAsync<T>(T entity) where T : class
         {
             _context.Set<T>().Add(entity);
