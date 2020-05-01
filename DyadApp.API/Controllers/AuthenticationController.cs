@@ -82,8 +82,8 @@ namespace DyadApp.API.Controllers
                 return Unauthorized("Access token is invalid.");
             }
 
-            var refreshToken = GetRefreshToken(authenticationTokens.RefreshToken, userId);
-            if (refreshToken.Result == null)
+            var refreshToken = await GetRefreshToken(authenticationTokens.RefreshToken, userId);
+            if (refreshToken == null)
             {
                 return Unauthorized("Refresh token is invalid.");
             }

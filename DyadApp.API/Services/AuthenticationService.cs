@@ -14,19 +14,17 @@ namespace DyadApp.API.Services
     public class AuthenticationService : IAuthenticationService
     {
         private readonly IAuthenticationRepository _authenticationRepository;
-        private readonly IUserRepository _userRepository;
         private readonly ISecretKeyService _keyService;
 
-        public AuthenticationService(ISecretKeyService keyService, IAuthenticationRepository authenticationRepository, IUserRepository userRepository)
+        public AuthenticationService(ISecretKeyService keyService, IAuthenticationRepository authenticationRepository)
         {
             _keyService = keyService;
             _authenticationRepository = authenticationRepository;
-            _userRepository = userRepository;
         }
 
         public async Task<AuthenticationTokens> Authenticate(string email, string password)
         {
-            var user = await _userRepository.GetByEmail(email);
+            var user = await _authenticationRepository.GetUserCredentialsByEmail(email);
             if (user == null)
             {
                 return null;
