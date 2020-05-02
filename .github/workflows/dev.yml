@@ -28,7 +28,7 @@ jobs:
     - name: Publish
       run: dotnet publish /home/runner/work/DyadApp.API/DyadApp.API/DyadApp.API/DyadApp.API.csproj --configuration Release --no-restore --output ./publish --self-contained true --runtime win-x86 -p:PublishTrimmed=true  -p:PublishSingleFile=true -p:EnvironmentName=Development
     - name: Deploy to server via FTP
-      uses: anderstofte/Basic-ftp-action@v2.1
+      uses: anderstofte/Basic-ftp-action@v2.2
       with:
         host: nt39.unoeuro.com
         user: dyadapp.com
