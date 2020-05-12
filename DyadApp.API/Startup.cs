@@ -60,7 +60,7 @@ namespace DyadApp.API
                         {
                             if (context.Exception.GetType() == typeof(SecurityTokenExpiredException))
                             {
-                                context.Response.Headers.Add("Token-Expired", "true");
+                                context.Response.Headers.Add("Token-Expired", "false");
                             }
                             return Task.CompletedTask;
                         }
@@ -74,6 +74,8 @@ namespace DyadApp.API
 
             services.AddTransient<IEmailService, EmailService>();
             services.AddTransient<ISecretKeyService, SecretKeyService>();
+
+            services.AddTransient<IMatchService, MatchService>();
 
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             services.AddTransient<IUserService, UserService>();
