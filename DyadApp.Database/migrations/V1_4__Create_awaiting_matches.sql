@@ -1,7 +1,7 @@
 USE [DyadAppDev]
 GO
 
-/****** Object:  Table [dbo].[AwaitingMatch]    Script Date: 5/8/2020 3:49:19 PM ******/
+/****** Object:  Table [dbo].[AwaitingMatches]    Script Date: 5/12/2020 10:09:52 AM ******/
 SET ANSI_NULLS ON
 GO
 
@@ -12,7 +12,7 @@ CREATE TABLE [dbo].[AwaitingMatches](
 	[ID] [int] IDENTITY(1,1) NOT NULL,
 	[UserID] [int] NOT NULL,
 	[Date] [datetime] NULL,
-	[MatchID] [int] NULL,
+	[IsMatched] [bit] NOT NULL,
  CONSTRAINT [PK_AwaitingMatch] PRIMARY KEY CLUSTERED 
 (
 	[ID] ASC
