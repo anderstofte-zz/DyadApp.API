@@ -28,11 +28,8 @@ namespace DyadApp.API.Data.Repositories
             {
                 UserId = u.UserId,
                 Email = u.Email,
-                Password = new UserPassword
-                {
-                    Password = u.Password.Password,
-                    Salt = u.Password.Salt
-                },
+                Password = u.Password,
+                Salt = u.Salt,
                 Verified = u.Verified,
                 RefreshTokens = u.RefreshTokens
             }).Where(x => x.Email == email && x.Verified).SingleOrDefaultAsync();
@@ -44,14 +41,17 @@ namespace DyadApp.API.Data.Repositories
             {
                 UserId = u.UserId,
                 Email = u.Email,
-                Password = new UserPassword
-                {
-                    Password = u.Password.Password,
-                    Salt = u.Password.Salt
-                },
+                Password = u.Password,
+                Salt = u.Salt,
                 Verified = u.Verified,
                 RefreshTokens = u.RefreshTokens
             }).Where(x => x.Email == email && x.Verified).SingleOrDefaultAsync();
+        }
+
+        public async Task UpdatePassword(UserPassword model)
+        {
+            _context.Update(model);
+            await SaveChangesAsync();
         }
 
         public async Task CreateTokenAsync<T>(T entity) where T : class
@@ -73,11 +73,20 @@ namespace DyadApp.API.Data.Repositories
                 .SingleOrDefaultAsync();
         }
 
-        public async Task<ResetPasswordToken> GetResetPasswordToken(string token)
+        public async Task<User> GetResetPasswordToken(string token, string email)
         {
-            return await _context.ResetPasswordTokens
-                .Where(x => x.Token == token && x.ExpirationDate > DateTime.UtcNow)
-                .SingleOrDefaultAsync();
+            return await _context.Users
+                .Where(x => x.Email == email)
+                .Select(x => new User
+                {
+                    UserId = x.UserId,
+                    ResetPasswordTokens = x.ResetPasswordTokens.Select(rpt => new ResetPasswordToken
+                    {
+                        Token = rpt.Token
+                    }).Where(rpt => rpt.Token == token).ToList(),
+                    Password = x.Password,
+                    Salt = x.Salt
+                }).SingleOrDefaultAsync();
         }
 
         public async Task SaveChangesAsync()

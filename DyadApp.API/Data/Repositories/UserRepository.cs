@@ -25,9 +25,31 @@ namespace DyadApp.API.Data.Repositories
             await _context.SaveChangesAsync();
         }
 
+        public async Task UpdateAsync(User user)
+        {
+            _context.Users.Update(user);
+            await _context.SaveChangesAsync();
+        }
+
         public async Task<User> GetUserById(int id)
         {
             return await _context.Users.Where(u => u.UserId == id).SingleOrDefaultAsync();
+        }
+
+        public async Task<User> GetUserForPasswordUpdate(string token, string email)
+        {
+            return await _context.Users.Select(u => new User
+            {
+                UserId = u.UserId,
+                Email = u.Email,
+                Password = u.Password,
+                Salt = u.Salt,
+                Verified = u.Verified,
+                ResetPasswordTokens = u.ResetPasswordTokens.Select(rpt => new ResetPasswordToken
+                {
+                    Token = rpt.Token
+                }).Where(rpt => rpt.Token == token).ToList(),
+            }).Where(x => x.Email == email && x.Verified).SingleOrDefaultAsync();
         }
 
         public async Task<UserPassword> GetUserPasswordByUserId(int id)
