@@ -7,7 +7,7 @@ using DyadApp.API.Models;
 
 namespace DyadApp.API.Services
 {
-	public class LoggingService
+	public class LoggingService : ILoggingService
 	{
         private readonly DyadAppContext _context;
 
@@ -16,17 +16,16 @@ namespace DyadApp.API.Services
             _context = context;
         }
 
-       /* public async Task<string> SaveLog(string LogDesc, string type)
+        public void SaveLog(string LogDesc, string type)
         {
-            Log log = new Log();
+            Logs log = new Logs();
             log.LogDesc = LogDesc;
             log.Type = type;
             log.TimeStamp = DateTime.Now;
 
-            _context.Logging.Add(log);
-
-            return;
-        }*/
+            _context.Logs.Add(log);
+            _context.SaveChanges();
+        }
 
     }
 }

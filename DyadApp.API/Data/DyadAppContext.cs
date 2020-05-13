@@ -6,7 +6,7 @@ namespace DyadApp.API.Data
     public class DyadAppContext : DbContext
     {
         public DbSet<User> Users { get; set; }
-        public DbSet<Log> Logging { get; set; }
+        public DbSet<Logs> Logs { get; set; }
 
         public DyadAppContext(DbContextOptions options) : base(options)
         {
