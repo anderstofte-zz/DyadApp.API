@@ -19,7 +19,7 @@ namespace DyadApp.API.Data
         public DbSet<AwaitingMatch> AwaitingMatches { get; set; }
         public DbSet<Match> Matches { get; set; }
         
-        public DyadAppContext(DbContextOptions options, IUserService userService) : base(options)
+        public DyadAppContext(DbContextOptions options) : base(options)
         {
         }
 
