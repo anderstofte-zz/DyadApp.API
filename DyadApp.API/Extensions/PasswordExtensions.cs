@@ -6,10 +6,10 @@ namespace DyadApp.API.Extensions
 {
     public static class PasswordExtensions
     {
-        public static bool ValidatePassword(this UserPassword userPassword, string password)
+        public static bool ValidatePassword(this User user, string password)
         {
-            var savedPasswordInHashBytes = Convert.FromBase64String(userPassword.Password);
-            var salt = Convert.FromBase64String(userPassword.Salt);
+            var savedPasswordInHashBytes = Convert.FromBase64String(user.Password);
+            var salt = Convert.FromBase64String(user.Salt);
 
             Array.Copy(savedPasswordInHashBytes, 0, salt, 0, 16);
             var pbkdf2 = new Rfc2898DeriveBytes(password, salt, 10000);

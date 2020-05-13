@@ -30,7 +30,7 @@ namespace DyadApp.API.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> AuthenticateUser(AuthenticationUserModel model)
+        public async Task<IActionResult> AuthenticateUser([FromBody] AuthenticationUserModel model)
         {
             var authenticationTokens = await _authenticationService.Authenticate(model.Email, model.Password);
 
@@ -43,13 +43,13 @@ namespace DyadApp.API.Controllers
         }
 
         [HttpPost("VerifySignupToken")]
-        public async Task<IActionResult> VerifyUser([FromBody] string token)
+        public async Task<IActionResult> VerifyUser([FromBody] SignupTokenModel model)
         {
-            var signup = await _authenticationRepository.GetSignupByToken(token);
+            var signup = await _authenticationRepository.GetSignupByToken(model.Token);
 
             if (signup == null)
             {
-                return Unauthorized("Signup token is invalid.");
+                return BadRequest("Signup token is invalid.");
             }
 
             var user = await _userRepository.GetUserById(signup.UserId);
@@ -79,13 +79,13 @@ namespace DyadApp.API.Controllers
             }
             catch (Exception)
             {
-                return Unauthorized("Access token is invalid.");
+                return BadRequest("Access token is invalid.");
             }
 
             var refreshToken = await GetRefreshToken(authenticationTokens.RefreshToken, userId);
             if (refreshToken == null)
             {
-                return Unauthorized("Refresh token is invalid.");
+                return BadRequest("Refresh token is invalid.");
             }
 
             var newTokens = await _authenticationService.GenerateTokens(userId);
@@ -132,23 +132,22 @@ namespace DyadApp.API.Controllers
         [HttpPost("UpdatePassword")]
         public async Task<IActionResult> UpdatePassword([FromBody] UpdatePasswordModel model)
         {
-            var resetPasswordToken = await _authenticationRepository.GetResetPasswordToken(model.Token);
-            if (resetPasswordToken == null)
+            if (!ModelState.IsValid)
             {
                 return BadRequest();
             }
 
-            var userPassword = await _userRepository.GetUserPasswordByUserId(resetPasswordToken.UserId);
-            if (userPassword == null)
+            var user = await _userRepository.GetUserForPasswordUpdate(model.Token, model.Email);
+            if (user == null || user.ResetPasswordTokens.Count == 0)
             {
                 return BadRequest();
             }
 
             var hashedPassword = PasswordHelper.GenerateHashedPassword(model.Password);
-            userPassword.Password = hashedPassword.Password;
-            userPassword.Salt = hashedPassword.Salt;
+            user.Password = hashedPassword.Password;
+            user.Salt = hashedPassword.Salt;
 
-            await _authenticationRepository.DeleteTokenAsync(resetPasswordToken);
+            await _userRepository.UpdateAsync(user);
 
             return Ok();
         }

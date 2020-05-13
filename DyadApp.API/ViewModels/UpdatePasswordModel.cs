@@ -7,6 +7,5 @@ namespace DyadApp.API.ViewModels
         public string Password { get; set; }
         public string Token { get; set; }
         public string Email { get; set; }
-        public User User { get; set; }
     }
 }

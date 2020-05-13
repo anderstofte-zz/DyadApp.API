@@ -30,7 +30,7 @@ namespace DyadApp.API.Services
                 return null;
             }
 
-            var isSubmittedPasswordValid = user.Password.ValidatePassword(password);
+            var isSubmittedPasswordValid = user.ValidatePassword(password);
             if (!isSubmittedPasswordValid)
             {
                 return null;
