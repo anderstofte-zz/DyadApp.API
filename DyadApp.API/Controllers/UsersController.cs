@@ -44,9 +44,14 @@ namespace DyadApp.API.Controllers
         [AllowAnonymous]
         public async Task<ActionResult> CreateUser([FromBody] CreateUserModel model)
         {
-            if (!ModelState.IsValid || await UserWithProvidedEmailAlreadyExists(model.Email))
+            if (!ModelState.IsValid)
             {
-                return BadRequest();
+                return BadRequest(ModelState.FirstError());
+            }
+
+            if (await UserWithProvidedEmailAlreadyExists(model.Email))
+            {
+                return BadRequest("En bruger med den indtastede email findes allerede.");
             }
 
             var user = model.ToUser();

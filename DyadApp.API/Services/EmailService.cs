@@ -69,7 +69,7 @@ namespace DyadApp.API.Services
                 Name = model.Name,
                 To = model.Email,
                 Subject = "Email verificering - Dyad",
-                VerifySignupUrl = _configuration.GetSection("WebAppBaseAddress").Value + "emailverified?token=" + model.Signups[0].Token
+                VerifySignupUrl = _configuration.GetSection("WebAppBaseAddress").Value + "email-verified?token=" + model.Signups[0].Token
             };
         }
     }
