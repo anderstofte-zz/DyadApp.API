@@ -1,15 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace DyadApp.API.Models
+﻿namespace DyadApp.API.Models
 {
-	public class AwaitingMatch
+	public class AwaitingMatch : EntityBase
 	{
-		public int ID { get; set; }
-		public int UserID { get; set; }
-		public DateTime Date { get; set; }
+		public int AwaitingMatchId { get; set; }
+		public int UserId { get; set; }
 		public bool IsMatched { get; set; }
 	}
 }

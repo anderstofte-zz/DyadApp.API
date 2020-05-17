@@ -1,6 +1,5 @@
 ﻿using DyadApp.API.Data;
 using DyadApp.API.Models;
-using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,30 +16,27 @@ namespace DyadApp.API.Services
 			_context = context;
 		}
 
-		public bool AddToAwaitingMatch(int UserID)
+		public async Task<bool> AddToAwaitingMatch(int userId)
 		{
-			AwaitingMatch aw = new AwaitingMatch();
-			aw.Date = DateTime.Now;
-			aw.UserID = UserID;
-			_context.AwaitingMatches.Add(aw);
-			_context.SaveChanges();
+            var awaitingMatch = new AwaitingMatch {UserId = userId};
+            _context.AwaitingMatches.Add(awaitingMatch);
+			await _context.SaveChangesAsync();
 			return true;
 		}
 
-
-		public bool SearchForMatch(int UserID)
+        public bool SearchForMatch(int userId)
 		{
 			User primeUser = new User();
 			User matchUser = new User();
 			List<AwaitingMatch> UserIDList = new List<AwaitingMatch>();
-			primeUser = _context.Users.Where(u => u.UserId == UserID).FirstOrDefault();
+			primeUser = _context.Users.Where(u => u.UserId == userId).FirstOrDefault();
 
-			UserIDList = _context.AwaitingMatches.Where(a => a.IsMatched == false && a.UserID != UserID).ToList();
+			UserIDList = _context.AwaitingMatches.Where(a => a.IsMatched == false && a.UserId != userId).ToList();
 
 			foreach (var item in UserIDList)
 			{
 				User user = new User();
-				user = _context.Users.Where(u => u.UserId == item.UserID).FirstOrDefault();
+				user = _context.Users.Where(u => u.UserId == item.UserId).FirstOrDefault();
 				if(primeUser.DateOfBirth.Year == user.DateOfBirth.Year)
 				{
 					matchUser = user;
@@ -48,8 +44,8 @@ namespace DyadApp.API.Services
 					AwaitingMatch secondaryAW = new AwaitingMatch();
 					Match match = new Match();
 
-					primeAW = _context.AwaitingMatches.Where(aw => aw.UserID == primeUser.UserId && aw.IsMatched == false ).FirstOrDefault();
-					secondaryAW = _context.AwaitingMatches.Where(aws => aws.UserID == matchUser.UserId && aws.IsMatched == false).FirstOrDefault();
+					primeAW = _context.AwaitingMatches.Where(aw => aw.UserId == primeUser.UserId && aw.IsMatched == false ).FirstOrDefault();
+					secondaryAW = _context.AwaitingMatches.Where(aws => aws.UserId == matchUser.UserId && aws.IsMatched == false).FirstOrDefault();
 					primeAW.IsMatched = true;
 					secondaryAW.IsMatched = true;
 					_context.AwaitingMatches.Update(primeAW);
@@ -58,8 +54,8 @@ namespace DyadApp.API.Services
 
 
 					match.MatchedDate = DateTime.Now;
-					match.PrimaryUserID = primeAW.UserID;
-					match.SecondaryUserID = secondaryAW.UserID;
+					match.PrimaryUserID = primeAW.UserId;
+					match.SecondaryUserID = secondaryAW.UserId;
 
 					_context.Matches.Add(match);
 					_context.SaveChanges();

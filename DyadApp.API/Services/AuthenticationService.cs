@@ -7,6 +7,7 @@ using DyadApp.API.Data.Repositories;
 using DyadApp.API.Extensions;
 using DyadApp.API.Helpers;
 using DyadApp.API.Models;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 
 namespace DyadApp.API.Services
@@ -22,21 +23,23 @@ namespace DyadApp.API.Services
             _authenticationRepository = authenticationRepository;
         }
 
-        public async Task<AuthenticationTokens> Authenticate(string email, string password)
+        public async Task<IActionResult> Authenticate(string email, string password)
         {
             var user = await _authenticationRepository.GetUserCredentialsByEmail(email);
             if (user == null)
             {
-                return null;
+                return new BadRequestObjectResult("Den indtastede email findes ikke i systemet.");
             }
+
+
 
             var isSubmittedPasswordValid = user.ValidatePassword(password);
             if (!isSubmittedPasswordValid)
             {
-                return null;
+                return new BadRequestObjectResult("Den indtastede adgangskode er forkert.");
             }
 
-            return await GenerateTokens(user.UserId);
+            return new OkObjectResult(await GenerateTokens(user.UserId));
         }
 
         public async Task<AuthenticationTokens> GenerateTokens(int userId)

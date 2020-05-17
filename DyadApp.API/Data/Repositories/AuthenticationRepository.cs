@@ -45,7 +45,7 @@ namespace DyadApp.API.Data.Repositories
                 Salt = u.Salt,
                 Verified = u.Verified,
                 RefreshTokens = u.RefreshTokens
-            }).Where(x => x.Email == email && x.Verified).SingleOrDefaultAsync();
+            }).Where(x => x.Email == email).SingleOrDefaultAsync();
         }
 
         public async Task UpdatePassword(UserPassword model)
