@@ -39,6 +39,17 @@ namespace DyadApp.API.Controllers
             return Ok(userProfile);
         }
 
+        [AllowAnonymous]
+        [HttpPost("VerifyCredentials")]
+        public IActionResult VerifySignupCredentials(SignupCredentialsModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState.FirstError());
+            }
+
+            return Ok();
+        }
 
         [HttpPost]
         [AllowAnonymous]
