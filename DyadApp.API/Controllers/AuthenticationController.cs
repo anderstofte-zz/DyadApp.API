@@ -32,6 +32,17 @@ namespace DyadApp.API.Controllers
         [HttpPost]
         public async Task<IActionResult> AuthenticateUser([FromBody] AuthenticationUserModel model)
         {
+            var user = await _authenticationRepository.GetUserCredentialsByEmail(model.Email);
+            if (user == null || !user.ValidatePassword(model.Password))
+            {
+                return BadRequest("Der findes ingen brugere med de indtastede oplysninger.");
+            }
+
+            if (!user.Verified)
+            {
+                return BadRequest("Kontoen er ikke verificeret. Tjek din indbakke.");
+            }
+
             var authenticationTokens = await _authenticationService.Authenticate(model.Email, model.Password);
 
             if (authenticationTokens == null)
@@ -39,7 +50,8 @@ namespace DyadApp.API.Controllers
                 return Unauthorized();
             }
 
-            return Ok(authenticationTokens);
+            var tokens = await _authenticationService.GenerateTokens(user.UserId);
+            return Ok(tokens);
         }
 
         [HttpPost("VerifySignupToken")]
