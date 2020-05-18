@@ -1,15 +1,13 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Security.Claims;
-using System.Security.Cryptography;
 using System.Threading.Tasks;
-using DyadApp.API.Extensions;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 
 namespace DyadApp.API.Hubs
 {
-    [Authorize]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     public class ChatHub : Hub
     {
         public async Task SendMessage(string something)
