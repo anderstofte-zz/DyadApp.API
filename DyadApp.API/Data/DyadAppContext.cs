@@ -15,6 +15,7 @@ namespace DyadApp.API.Data
         public DbSet<Signup> Signups { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         public DbSet<ResetPasswordToken> ResetPasswordTokens { get; set; }
+        public DbSet<ChatMessage> Messenges { get; set; }
 
         public DbSet<AwaitingMatch> AwaitingMatches { get; set; }
         public DbSet<Match> Matches { get; set; }
