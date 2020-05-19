@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+using DyadApp.API.Extensions;
 using DyadApp.API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -21,32 +19,31 @@ namespace DyadApp.API.Controllers
             _matchService = matchService;
         }
 
-        [HttpGet]
-        public IActionResult Index()
-        {
-            return View();
-        }
-
         [HttpPost("AwaitingMatch")]
-        public IActionResult AwaitingMatch([FromBody]int UserID)
+        public async Task<IActionResult> AwaitingMatch()
         {
-            var completion = _matchService.AddToAwaitingMatch(UserID);
-            if (completion == true)
+            var userId = User.GetUserId();
+            var isAddedToQueueOfAwaitingMatches = await _matchService.AddToAwaitingMatch(userId);
+            
+            if (!isAddedToQueueOfAwaitingMatches)
             {
-                return Ok();
+                return BadRequest("Der gik noget galt.");
             }
-            return BadRequest();
+
+            return Ok("Der er ikke nogle tilgængelige matches til dig lige nu. Vi arbejder på højtryk for at finde et!");
         }
 
         [HttpPost]
-        public IActionResult Match([FromBody]int UserID)
+        public IActionResult Match()
         {
-            var completion =_matchService.SearchForMatch(UserID);
-            if(completion == true)
+            var userId = User.GetUserId();
+            var isMatchFound =_matchService.SearchForMatch(userId);
+
+            if(!isMatchFound)
             {
-                return Ok();
+                return BadRequest();
             }
-            return BadRequest();
+            return Ok("Vi fandt et nyt match!");
         }
     }
 }

@@ -58,7 +58,7 @@ namespace DyadApp.API.Services
             {
                 To = model.Email,
                 Subject = "Gendan adgangskode - Dyad",
-                ResetPasswordUrl = _configuration.GetSection("WebAppBaseAddress").Value + "resetpassword?token=" + model.Token
+                ResetPasswordUrl = _configuration.GetSection("WebAppBaseAddress").Value + "reset-password?token=" + model.Token
             };
         }
 

@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
+using DyadApp.API.Data;
 using DyadApp.API.Data.Repositories;
 using DyadApp.API.Extensions;
 using DyadApp.API.Helpers;
@@ -8,6 +10,7 @@ using DyadApp.API.Services;
 using DyadApp.API.ViewModels;
 using DyadApp.Emails;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace DyadApp.API.Controllers
 {
@@ -20,18 +23,25 @@ namespace DyadApp.API.Controllers
         private readonly IAuthenticationService _authenticationService;
         private readonly ISecretKeyService _keyService;
         private readonly IEmailService _emailService;
-        public AuthenticationController(IAuthenticationService authenticationService, ISecretKeyService keyService, IEmailService emailService, IAuthenticationRepository authenticationRepository, IUserRepository userRepository)
+        private readonly DyadAppContext _context;
+        public AuthenticationController(IAuthenticationService authenticationService, ISecretKeyService keyService, IEmailService emailService, IAuthenticationRepository authenticationRepository, IUserRepository userRepository, DyadAppContext context)
         {
             _authenticationService = authenticationService;
             _keyService = keyService;
             _emailService = emailService;
             _authenticationRepository = authenticationRepository;
             _userRepository = userRepository;
+            _context = context;
         }
 
         [HttpPost]
         public async Task<IActionResult> AuthenticateUser([FromBody] AuthenticationUserModel model)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState.FirstError());
+            }
+            
             var user = await _authenticationRepository.GetUserCredentialsByEmail(model.Email);
             if (user == null || !user.ValidatePassword(model.Password))
             {
@@ -41,13 +51,6 @@ namespace DyadApp.API.Controllers
             if (!user.Verified)
             {
                 return BadRequest("Kontoen er ikke verificeret. Tjek din indbakke.");
-            }
-
-            var authenticationTokens = await _authenticationService.Authenticate(model.Email, model.Password);
-
-            if (authenticationTokens == null)
-            {
-                return Unauthorized();
             }
 
             var tokens = await _authenticationService.GenerateTokens(user.UserId);
@@ -112,7 +115,7 @@ namespace DyadApp.API.Controllers
         }
 
         [HttpPost("ResetPassword")]
-        public async Task<IActionResult> ResetPassword([FromBody]ResetPasswordRequestModel model)
+        public async Task<IActionResult> ResetPassword(ResetPasswordRequestModel model)
         {
             var user = await _userRepository.GetByEmail(model.Email);
 
@@ -142,22 +145,29 @@ namespace DyadApp.API.Controllers
         }
 
         [HttpPost("UpdatePassword")]
-        public async Task<IActionResult> UpdatePassword([FromBody] UpdatePasswordModel model)
+        public async Task<IActionResult> UpdatePassword(UpdatePasswordModel model)
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest();
+                return BadRequest(ModelState.FirstError());
             }
 
             var user = await _userRepository.GetUserForPasswordUpdate(model.Token, model.Email);
-            if (user == null || user.ResetPasswordTokens.Count == 0)
+            if (user == null)
             {
-                return BadRequest();
+                return BadRequest("Der findes ingen brugere med den indtastede email.");
             }
 
-            var hashedPassword = PasswordHelper.GenerateHashedPassword(model.Password);
+            if (user.ResetPasswordTokens.Count == 0)
+            {
+                return BadRequest("Der opstod en fejl! Prøv igen eller kontakt support.");
+            }
+
+            var hashedPassword = PasswordHelper.GenerateHashedPassword(model.NewPassword);
             user.Password = hashedPassword.Password;
             user.Salt = hashedPassword.Salt;
+
+            _context.ResetPasswordTokens.Remove(user.ResetPasswordTokens.First());
 
             await _userRepository.UpdateAsync(user);
 

@@ -41,12 +41,17 @@ namespace DyadApp.API.Data.Repositories
             return await _context.Users.Select(u => new User
             {
                 UserId = u.UserId,
+                Name = u.Name,
                 Email = u.Email,
                 Password = u.Password,
                 Salt = u.Salt,
                 Verified = u.Verified,
+                Active = u.Active,
+                DateOfBirth = u.DateOfBirth,
+                ProfileImage = u.ProfileImage,
                 ResetPasswordTokens = u.ResetPasswordTokens.Select(rpt => new ResetPasswordToken
                 {
+                    ResetPasswordTokenId = rpt.ResetPasswordTokenId,
                     Token = rpt.Token
                 }).Where(rpt => rpt.Token == token).ToList(),
             }).Where(x => x.Email == email && x.Verified).SingleOrDefaultAsync();

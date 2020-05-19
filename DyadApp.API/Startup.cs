@@ -3,13 +3,17 @@ using System.Text;
 using System.Threading.Tasks;
 using DyadApp.API.Data;
 using DyadApp.API.Data.Repositories;
+using DyadApp.API.Hubs;
+using DyadApp.API.Providers;
 using DyadApp.API.Services;
 using MailKit.Net.Smtp;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -47,6 +51,7 @@ namespace DyadApp.API
                                 "https://vuetest.dyadapp.com"
                                 ).
                             AllowAnyHeader().
+                            AllowCredentials().
                             AllowAnyMethod();
                     });
             });
@@ -86,6 +91,20 @@ namespace DyadApp.API
                                 context.Response.Headers.Add("Token-Expired", "false");
                             }
                             return Task.CompletedTask;
+                        },
+
+                        OnMessageReceived = context =>
+                        {
+                            var accessToken = context.Request.Query["access_token"];
+
+                            // If the request is for our hub...
+                            var path = context.HttpContext.Request.Path;
+                            if (!string.IsNullOrEmpty(accessToken))
+                            {
+                                // Read the token out of the query string
+                                context.Token = accessToken;
+                            }
+                            return Task.CompletedTask;
                         }
                     };
                 });
@@ -104,6 +123,11 @@ namespace DyadApp.API
 
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IAuthenticationRepository, AuthenticationRepository>();
+
+            services.AddSignalR()
+                .AddHubOptions<ChatHub>(options => options.EnableDetailedErrors = true);
+
+            services.AddSingleton<IUserIdProvider, NameUserIdProvider>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -120,12 +144,17 @@ namespace DyadApp.API
 
             app.UseCors(CorsPolicy);
 
+            var websocketOptions = new WebSocketOptions();
+            websocketOptions.AllowedOrigins.Add(Configuration.GetSection("WebAppBaseAddress").Value);
+            app.UseWebSockets(websocketOptions);
+
             app.UseAuthentication();
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
+                endpoints.MapHub<ChatHub>("/hubs/chat");
             });
         }
     }
