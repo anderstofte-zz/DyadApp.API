@@ -41,15 +41,20 @@ namespace DyadApp.API.Controllers
             {
                 return BadRequest(ModelState.FirstError());
             }
+            
+            var user = await _authenticationRepository.GetUserCredentialsByEmail(model.Email);
+            if (user == null || !user.ValidatePassword(model.Password))
+            {
+                return BadRequest("Der findes ingen brugere med de indtastede oplysninger.");
+            }
 
-            return await _authenticationService.Authenticate(model.Email, model.Password);
+            if (!user.Verified)
+            {
+                return BadRequest("Kontoen er ikke verificeret. Tjek din indbakke.");
+            }
 
-            //if (authenticationTokens == null)
-            //{
-            //    return BadRequest("Emailen og/eller adgangskoden er forkert.");
-            //}
-
-            //return Ok(authenticationTokens);
+            var tokens = await _authenticationService.GenerateTokens(user.UserId);
+            return Ok(tokens);
         }
 
         [HttpPost("VerifySignupToken")]
