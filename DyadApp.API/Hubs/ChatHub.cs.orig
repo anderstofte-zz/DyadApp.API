@@ -1,22 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Security.Claims;
-using System.Security.Cryptography;
 using System.Threading.Tasks;
+<<<<<<< HEAD
 using DyadApp.API.Data;
 using DyadApp.API.Extensions;
 using DyadApp.API.Models;
 using DyadApp.API.Services;
+=======
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+>>>>>>> origin/feature/BE-8-SignalR-authorization
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-
 namespace DyadApp.API.Hubs
 {
+<<<<<<< HEAD
+    //[Authorize]
+=======
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-
+>>>>>>> origin/feature/BE-8-SignalR-authorization
     public class ChatHub : Hub
     {
         private readonly DyadAppContext _context;
@@ -32,9 +35,8 @@ namespace DyadApp.API.Hubs
 
         public async Task SendMessage(string message)
         {
-            var ConnectionId = Context.ConnectionId;
-            var contextUserId = Context.User.GetUserId();
-            AddMessage(contextUserId, 1, message);
+            var UserId = Context.ConnectionId;
+            AddMessage(1, 2, message);
             await Clients.All.SendAsync("ReceiveMessage", message);
         }
 
@@ -42,7 +44,7 @@ namespace DyadApp.API.Hubs
         public override async Task OnConnectedAsync()
         {
             var connectionId = Context.ConnectionId;
-            var contextUserId = Context.User.GetUserId();
+            var contextUserId = 1;//Context.User.GetUserId();
             AddConnection(connectionId, contextUserId);
             await base.OnConnectedAsync();
         }

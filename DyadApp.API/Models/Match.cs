@@ -7,9 +7,12 @@ namespace DyadApp.API.Models
 {
 	public class Match
 	{
-		public int ID { get; set; }
+		public int MatchId { get; set; }
 		public int PrimaryUserID { get; set; }
 		public int SecondaryUserID { get; set; }
-		public DateTime MatchedDate { get; set; }
+		public DateTime Modified { get; set; }
+		public int ModifiedBy { get; set; }
+		public DateTime Created { get; set; }
+		public int CreatedBy { get; set; }
 	}
 }

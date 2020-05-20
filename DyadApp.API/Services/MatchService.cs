@@ -18,10 +18,15 @@ namespace DyadApp.API.Services
 
 		public async Task<bool> AddToAwaitingMatch(int userId)
 		{
-            var awaitingMatch = new AwaitingMatch {UserId = userId};
-            _context.AwaitingMatches.Add(awaitingMatch);
-			await _context.SaveChangesAsync();
-			return true;
+			var user = _context.AwaitingMatches.Where(aw => aw.UserId == userId || aw.IsMatched == false).FirstOrDefault();
+			if (user == null)
+			{
+				var awaitingMatch = new AwaitingMatch { UserId = userId };
+				_context.AwaitingMatches.Add(awaitingMatch);
+				await _context.SaveChangesAsync();
+				return true;
+			}
+			return false;
 		}
 
         public bool SearchForMatch(int userId)
@@ -53,7 +58,8 @@ namespace DyadApp.API.Services
 					_context.SaveChanges();
 
 
-					match.MatchedDate = DateTime.Now;
+					match.Created = DateTime.Now;
+					match.Modified = DateTime.Now;
 					match.PrimaryUserID = primeAW.UserId;
 					match.SecondaryUserID = secondaryAW.UserId;
 
@@ -67,6 +73,10 @@ namespace DyadApp.API.Services
 			return false;
 		}
 
+		public List<Match> RetreiveMatchList(int userId)
+		{
+			return _context.Matches.Where(m => m.PrimaryUserID == userId || m.SecondaryUserID == userId).ToList();
+		}
 
 	}
 }
