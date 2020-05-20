@@ -6,6 +6,6 @@ namespace DyadApp.API.Services
 	{
 		
 		Task<bool> AddToAwaitingMatch(int userId);
-		bool SearchForMatch(int userId);
+        Task<bool> SearchForMatch(int userId);
 	}
 }
