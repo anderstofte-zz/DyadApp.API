@@ -21,7 +21,7 @@ namespace DyadApp.API.Controllers
             _matchService = matchService;
         }
 
-        [HttpPost("AwaitingMatch")]
+       /* [HttpPost("AwaitingMatch")]
         public async Task<IActionResult> AwaitingMatch()
         {
             var userId = User.GetUserId();
@@ -33,13 +33,18 @@ namespace DyadApp.API.Controllers
             }
 
             return Ok("Der er ikke nogle tilgængelige matches til dig lige nu. Vi arbejder på højtryk for at finde et!");
-        }
+        }*/
 
         [HttpPost]
         public async Task<IActionResult> Match()
         {
             var userId = User.GetUserId();
+<<<<<<< HEAD
+            _matchService.AddToAwaitingMatch(userId);
+            var isMatchFound =_matchService.SearchForMatch(userId);
+=======
             var isMatchFound = await _matchService.SearchForMatch(userId);
+>>>>>>> origin/feature/MatchService-refactored
 
             if(!isMatchFound)
             {
@@ -49,10 +54,10 @@ namespace DyadApp.API.Controllers
         }
 
         [HttpGet("RetreiveMatchList")]
-        public async Task<List<MatchViewModel>> RetreiveMatchList()
+        public List<Match> RetreiveMatchList()
         {
             var userId = User.GetUserId();
-            return await _matchService.RetreiveMatchList(userId);
+            return _matchService.RetreiveMatchList(userId);
 
         }
     }

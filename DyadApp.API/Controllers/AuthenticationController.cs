@@ -41,15 +41,20 @@ namespace DyadApp.API.Controllers
             {
                 return BadRequest(ModelState.FirstError());
             }
+            
+            var user = await _authenticationRepository.GetUserCredentialsByEmail(model.Email);
+            if (user == null || !user.ValidatePassword(model.Password))
+            {
+                return BadRequest("Der findes ingen brugere med de indtastede oplysninger.");
+            }
 
-            return await _authenticationService.Authenticate(model.Email, model.Password);
+            if (!user.Verified)
+            {
+                return BadRequest("Kontoen er ikke verificeret. Tjek din indbakke.");
+            }
 
-            //if (authenticationTokens == null)
-            //{
-            //    return BadRequest("Emailen og/eller adgangskoden er forkert.");
-            //}
-
-            //return Ok(authenticationTokens);
+            var tokens = await _authenticationService.GenerateTokens(user.UserId);
+            return Ok(tokens);
         }
 
         [HttpPost("VerifySignupToken")]
@@ -153,16 +158,17 @@ namespace DyadApp.API.Controllers
                 return BadRequest("Der findes ingen brugere med den indtastede email.");
             }
 
-            if (user.ResetPasswordTokens.Count == 0)
+            var resetToken = user.ResetPasswordTokens.Find(x => x.Token == model.Token);
+            if (resetToken == null)
             {
-                return BadRequest("Der opstod en fejl! Prøv igen eller kontakt support.");
+                return BadRequest("Din forespørgsel er udløbet. Foretag en ny.");
             }
 
             var hashedPassword = PasswordHelper.GenerateHashedPassword(model.NewPassword);
             user.Password = hashedPassword.Password;
             user.Salt = hashedPassword.Salt;
 
-            _context.ResetPasswordTokens.Remove(user.ResetPasswordTokens.First());
+            _context.ResetPasswordTokens.Remove(resetToken);
 
             await _userRepository.UpdateAsync(user);
 

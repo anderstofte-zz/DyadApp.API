@@ -145,8 +145,7 @@ namespace DyadApp.API
             app.UseCors(CorsPolicy);
 
             var websocketOptions = new WebSocketOptions();
-            websocketOptions.AllowedOrigins.Add("http://localhost:8080");
-            websocketOptions.AllowedOrigins.Add("http://localhost");
+            websocketOptions.AllowedOrigins.Add(Configuration.GetSection("WebAppBaseAddress").Value);
             app.UseWebSockets(websocketOptions);
 
             app.UseAuthentication();

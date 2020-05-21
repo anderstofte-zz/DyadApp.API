@@ -4,8 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using DyadApp.API.Data.Repositories;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System;
 
 namespace DyadApp.API.Services
 {
@@ -21,16 +19,28 @@ namespace DyadApp.API.Services
 
 		public async Task<bool> AddToAwaitingMatch(int userId)
 		{
+<<<<<<< HEAD
+			var user = _context.AwaitingMatches.Where(aw => aw.UserId == userId || aw.IsMatched == false).FirstOrDefault();
+			if (user == null)
+			{
+				var awaitingMatch = new AwaitingMatch { UserId = userId };
+				_context.AwaitingMatches.Add(awaitingMatch);
+				await _context.SaveChangesAsync();
+				return true;
+			}
+			return false;
+=======
             if (await UserIsAlreadyAwaitingAMatch(userId))
             {
                 return true;
             }
 
-				var awaitingMatch = new AwaitingMatch { UserId = userId };
-				_context.AwaitingMatches.Add(awaitingMatch);
-				await _context.SaveChangesAsync();
+            var awaitingMatch = new AwaitingMatch {UserId = userId};
+            _context.AwaitingMatches.Add(awaitingMatch);
+			await _context.SaveChangesAsync();
 
 			return true;
+>>>>>>> origin/feature/MatchService-refactored
 		}
 
         private async Task<bool> UserIsAlreadyAwaitingAMatch(int userId)
@@ -40,6 +50,48 @@ namespace DyadApp.API.Services
 
         public async Task <bool> SearchForMatch(int userId)
 		{
+<<<<<<< HEAD
+			User primeUser = new User();
+			User matchUser = new User();
+			List<AwaitingMatch> UserIDList = new List<AwaitingMatch>();
+			primeUser = _context.Users.Where(u => u.UserId == userId).FirstOrDefault();
+
+			UserIDList = _context.AwaitingMatches.Where(a => a.IsMatched == false && a.UserId != userId).ToList();
+
+			foreach (var item in UserIDList)
+			{
+				User user = new User();
+				user = _context.Users.Where(u => u.UserId == item.UserId).FirstOrDefault();
+				if(primeUser.DateOfBirth.Year == user.DateOfBirth.Year)
+				{
+					matchUser = user;
+					AwaitingMatch primeAW = new AwaitingMatch();
+					AwaitingMatch secondaryAW = new AwaitingMatch();
+					Match match = new Match();
+
+					primeAW = _context.AwaitingMatches.Where(aw => aw.UserId == primeUser.UserId && aw.IsMatched == false ).FirstOrDefault();
+					secondaryAW = _context.AwaitingMatches.Where(aws => aws.UserId == matchUser.UserId && aws.IsMatched == false).FirstOrDefault();
+					primeAW.IsMatched = true;
+					secondaryAW.IsMatched = true;
+					_context.AwaitingMatches.Update(primeAW);
+					_context.AwaitingMatches.Update(secondaryAW);
+					_context.SaveChanges();
+
+
+					match.Created = DateTime.Now;
+					match.Modified = DateTime.Now;
+					match.PrimaryUserID = primeAW.UserId;
+					match.SecondaryUserID = secondaryAW.UserId;
+
+					_context.Matches.Add(match);
+					_context.SaveChanges();
+
+					return true;
+				}
+			}
+
+			return false;
+=======
 			var userToMatch = await _userRepository.GetUserById(userId);
 
             var awaitingMatch = await _context.AwaitingMatches.Where(aw =>
@@ -97,19 +149,13 @@ namespace DyadApp.API.Services
 			//}
 
 			//return false;
+>>>>>>> origin/feature/MatchService-refactored
 		}
 
-		public async Task<List<MatchViewModel>> RetreiveMatchList(int userId)
+		public List<Match> RetreiveMatchList(int userId)
 		{
-			var matchList = await _context.Matches.Where(m => m.PrimaryUserId == userId || m.SecondaryUserId == userId).Select(u => new MatchViewModel {
-				UserId = userId == u.PrimaryUserId ? u.SecondaryUserId : u.PrimaryUserId,
-				Name = u.User.Name,
-				LastReceivedMessage = u.Messages.OrderByDescending(i => i.Id).Select(m => m.Message).FirstOrDefault(),
-				MessageReceivedTime = u.Messages.OrderByDescending(i => i.Id).Select(m => m.Created).FirstOrDefault(),
-				ProfileImage = Convert.ToBase64String(u.User.ProfileImage),
-			}).ToListAsync();
-
-			return matchList;
+			return _context.Matches.Where(m => m.PrimaryUserID == userId || m.SecondaryUserID == userId).ToList();
 		}
+
 	}
 }

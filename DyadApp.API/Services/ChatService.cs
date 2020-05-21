@@ -17,13 +17,14 @@ namespace DyadApp.API.Services
 			_context = context;
 		}
 
-		public void AddMessage(int SenderId, int ReceiverId, string Message)
+		public void AddMessage(int senderId, int receiverId, string message)
 		{
-			ChatMessage chatMessage = new ChatMessage();
-			chatMessage.Message = Message;
-			chatMessage.SenderId = SenderId;
-			chatMessage.ReceiverId = ReceiverId;
-			chatMessage.Timestamp = DateTime.Now;
+			ChatMessage chatMessage = new ChatMessage
+			{
+				Message = message,
+				SenderId = senderId,
+				ReceiverId = receiverId
+			};
 			_context.Add(chatMessage);
 			_context.SaveChangesAsync();
 

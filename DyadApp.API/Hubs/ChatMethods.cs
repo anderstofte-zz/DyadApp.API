@@ -22,8 +22,8 @@ namespace DyadApp.API.Hubs
 			chatMessage.Message = Message;
 			chatMessage.SenderId = SenderId;
 			chatMessage.ReceiverId = ReceiverId;
-			chatMessage.Timestamp = DateTime.Now;
-			_context.Messenges.Add(chatMessage);
+
+			_context.ChatMessages.Add(chatMessage);
 			_context.SaveChangesAsync();
 
 		}
