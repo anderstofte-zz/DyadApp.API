@@ -49,12 +49,8 @@ namespace DyadApp.API.Data.Repositories
                 Active = u.Active,
                 DateOfBirth = u.DateOfBirth,
                 ProfileImage = u.ProfileImage,
-                ResetPasswordTokens = u.ResetPasswordTokens.Select(rpt => new ResetPasswordToken
-                {
-                    ResetPasswordTokenId = rpt.ResetPasswordTokenId,
-                    Token = rpt.Token
-                }).Where(rpt => rpt.Token == token).ToList(),
-            }).Where(x => x.Email == email && x.Verified).SingleOrDefaultAsync();
+                ResetPasswordTokens = u.ResetPasswordTokens
+            }).Where(x => x.Email == email).SingleOrDefaultAsync();
         }
 
         public async Task<UserPassword> GetUserPasswordByUserId(int id)

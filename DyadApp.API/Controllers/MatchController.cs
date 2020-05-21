@@ -34,10 +34,10 @@ namespace DyadApp.API.Controllers
         }
 
         [HttpPost]
-        public IActionResult Match()
+        public async Task<IActionResult> Match()
         {
             var userId = User.GetUserId();
-            var isMatchFound =_matchService.SearchForMatch(userId);
+            var isMatchFound = await _matchService.SearchForMatch(userId);
 
             if(!isMatchFound)
             {

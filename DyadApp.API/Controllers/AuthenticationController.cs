@@ -158,16 +158,17 @@ namespace DyadApp.API.Controllers
                 return BadRequest("Der findes ingen brugere med den indtastede email.");
             }
 
-            if (user.ResetPasswordTokens.Count == 0)
+            var resetToken = user.ResetPasswordTokens.Find(x => x.Token == model.Token);
+            if (resetToken == null)
             {
-                return BadRequest("Der opstod en fejl! Prøv igen eller kontakt support.");
+                return BadRequest("Din forespørgsel er udløbet. Foretag en ny.");
             }
 
             var hashedPassword = PasswordHelper.GenerateHashedPassword(model.NewPassword);
             user.Password = hashedPassword.Password;
             user.Salt = hashedPassword.Salt;
 
-            _context.ResetPasswordTokens.Remove(user.ResetPasswordTokens.First());
+            _context.ResetPasswordTokens.Remove(resetToken);
 
             await _userRepository.UpdateAsync(user);
 
