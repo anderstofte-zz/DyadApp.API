@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using DyadApp.API.Extensions;
 using DyadApp.API.Models;
 using DyadApp.API.Services;
+using DyadApp.API.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -53,7 +54,18 @@ namespace DyadApp.API.Controllers
         {
             var userId = User.GetUserId();
             return await _matchService.RetreiveMatchList(userId);
+        }
 
+        [HttpGet("{id}")]
+        public async Task<MatchConversationModel> FetchChat(int id)
+        {
+            return await _matchService.FetchChatMessages(id, User.GetUserId());
+        }
+
+        [HttpPost("Read/{id}")]
+        public async Task MessagesIsRead(int id)
+        {
+             await _matchService.MarkMessagesAsRead(id, User.GetUserId());
         }
     }
 }

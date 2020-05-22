@@ -1,13 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Security.Claims;
-using System.Security.Cryptography;
 using System.Threading.Tasks;
 using DyadApp.API.Data;
 using DyadApp.API.Extensions;
-using DyadApp.API.Models;
-using DyadApp.API.Services;
+using DyadApp.API.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 
@@ -20,60 +16,52 @@ namespace DyadApp.API.Hubs
     public class ChatHub : Hub
     {
         private readonly DyadAppContext _context;
+        public readonly Dictionary<int, string> Connections = new Dictionary<int, string>();
 
         public ChatHub(DyadAppContext context)
         {
             _context = context;
         }
 
-
-        Dictionary<string, int> connections = new Dictionary<string, int>();
-
-
-        public async Task SendMessage(string message)
+        public async Task SendMessage(NewChatMessageModel model)
         {
-            var ConnectionId = Context.ConnectionId;
-            var contextUserId = Context.User.GetUserId();
-            AddMessage(contextUserId, 1, message);
-            await Clients.All.SendAsync("ReceiveMessage", message);
-        }
+            var userId = Context.User.GetUserId();
 
+            var chatMethods = new ChatMethods(_context);
+            await chatMethods.AddMessage(model);
+
+            var newChatMessage = new ChatMessageModel
+            {
+                Message = model.Message,
+                UserId = userId,
+                Sent = DateTime.Now
+            };
+            await Clients.All.SendAsync("ReceiveMessage", newChatMessage);
+        }
 
         public override async Task OnConnectedAsync()
         {
             var connectionId = Context.ConnectionId;
             var contextUserId = Context.User.GetUserId();
-            AddConnection(connectionId, contextUserId);
+            AddConnection(contextUserId, connectionId);
             await base.OnConnectedAsync();
+        }
+
+        public void AddConnection(int userId, string connectionId)
+        {
+            Connections.Add(userId, connectionId);
         }
 
         public override async Task OnDisconnectedAsync(Exception exception)
         {
-            var connectionId = Context.ConnectionId;
-            RemoveConnecection(connectionId);
+            var userId = Context.User.GetUserId();
+            RemoveConnection(userId);
             await base.OnDisconnectedAsync(exception);
         }
 
-        public void AddConnection(string connectionId, int userId)
+        public void RemoveConnection(int userId)
         {
-            connections.Add(connectionId, userId);
+            Connections.Remove(userId);
         }
-
-        public void RemoveConnecection(string connectionId)
-        {
-            connections.Remove(connectionId);
-        }
-
-        public void AddMessage(int SenderId, int ReceiverId, string Message)
-        {
-            ChatMessage chatMessage = new ChatMessage();
-            chatMessage.Message = Message;
-            chatMessage.SenderId = SenderId;
-            chatMessage.ReceiverId = ReceiverId;
-            _context.ChatMessages.Add(chatMessage);
-            _context.SaveChanges();
-
-        }
-
     }
 }

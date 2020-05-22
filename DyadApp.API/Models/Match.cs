@@ -2,13 +2,10 @@
 
 namespace DyadApp.API.Models
 {
-	public class Match: EntityBase
+	public class Match : EntityBase
 	{
 		public int MatchId { get; set; }
-		public int PrimaryUserId { get; set; }
-		public int SecondaryUserId { get; set; }
-
-		public User User { get; set; }
-		public List<ChatMessage> Messages { get; set; }
-	}
+        public List<UserMatch> UserMatches { get; set; }
+        public List<ChatMessage> ChatMessages { get; set; }
+    }
 }

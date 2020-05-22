@@ -1,9 +1,7 @@
 ﻿using DyadApp.API.Data;
 using DyadApp.API.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
+using DyadApp.API.ViewModels;
 
 namespace DyadApp.API.Hubs
 {
@@ -16,15 +14,11 @@ namespace DyadApp.API.Hubs
 			_context = context;
 		}
 
-		public void AddMessage(int SenderId, int ReceiverId, string Message)
+		public async Task AddMessage(NewChatMessageModel model)
 		{
-			ChatMessage chatMessage = new ChatMessage();
-			chatMessage.Message = Message;
-			chatMessage.SenderId = SenderId;
-			chatMessage.ReceiverId = ReceiverId;
-
-			_context.ChatMessages.Add(chatMessage);
-			_context.SaveChangesAsync();
+            var chatMessage = new ChatMessage {MatchId = model.MatchId, Message = model.Message, SenderId = model.SenderId, ReceiverId = model.ReceiverId};
+            _context.ChatMessages.Add(chatMessage);
+			await _context.SaveChangesAsync();
 
 		}
 	}
