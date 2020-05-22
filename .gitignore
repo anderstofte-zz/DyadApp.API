@@ -351,3 +351,4 @@ MigrationBackup/
 
 # flyway.conf
 /Database/flyway.conf
+*.conf
