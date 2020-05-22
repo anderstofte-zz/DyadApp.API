@@ -1,0 +1,8 @@
+USE [master]
+GO
+
+CREATE DATABASE [DyadAppDev] COLLATE Latin1_General_CI_AS
+GO
+
+ALTER DATABASE [DyadAppDev] SET AUTO_CLOSE OFF 
+GO

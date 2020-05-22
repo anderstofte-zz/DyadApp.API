@@ -1,0 +1,102 @@
+﻿<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dyad - Verificer konto</title>
+    <style>
+
+        /* A simple css reset */
+        body, table, thead, tbody, tr, td, img {
+            padding: 0;
+            margin: 0;
+            border: none;
+            border-spacing: 0px;
+            border-collapse: collapse;
+            vertical-align: top;
+            text-align: center;
+        }
+
+        /* Add some padding for small screens */
+        .wrapper {
+            padding-left: 10px;
+            padding-right: 10px;
+        }
+
+        h1, h2, h3, h4, h5, h6, p, #submit-button {
+            margin: 0;
+            padding: 0;
+            padding-bottom: 20px;
+            line-height: 1.6;
+            font-family: 'Roboto', 'Arial', sans-serif;
+        }
+
+        p, a, li, #submit-button {
+            font-family: 'Roboto', 'Arial', sans-serif;
+        }
+
+        img {
+            width: 100%;
+            display: block;
+        }
+
+        @media only screen and (max-width: 620px) {
+
+            .wrapper .section {
+                width: 100%;
+            }
+
+            .wrapper .column {
+                width: 100%;
+                display: block;
+            }
+        }
+
+        #submit-button {
+            background: #20cda2;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 10px 40px;
+            cursor: pointer;
+            outline: inherit;
+            font-size: 1rem;
+            -webkit-box-shadow: 0px 0px 3px 0px rgba(0,0,0,0.75);
+            -moz-box-shadow: 0px 0px 3px 0px rgba(0,0,0,0.75);
+            box-shadow: 0px 0px 3px 0px rgba(0,0,0,0.75);
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body>
+<div>
+    <table style="background-color: white; width: 500px; margin: 0 auto;">
+        <tr>
+            <td style="background-color: #20cda2; height: 60px"></td>
+        </tr>
+        <tr>
+            <td style="padding: 10px 0">
+                <h2>Du er der næsten!</h2>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding: 0 20px">
+                <p>Før du kan starte med at bruge Dyad skal vi verificere din email.</p>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding: 20px 0">
+                <a id="submit-button" href="{{ VerifySignupUrl }}">Verificer email</a>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <p>Hilsen Dyad support</p>
+            </td>
+        </tr>
+    </table>
+</div>
+</body>
+</html>

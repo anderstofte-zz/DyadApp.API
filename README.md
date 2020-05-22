@@ -1,6 +1,9 @@
 # API for DyadApp 
-Build statuses:
+Build status\
 ![dev](https://github.com/anderstofte/DyadApp.API/workflows/dev/badge.svg)
-![prod](https://github.com/anderstofte/DyadApp.API/workflows/prod/badge.svg)
 
-Some description....
+Status for testing will come.
+
+Some description...
+
+TODO: swagger!
