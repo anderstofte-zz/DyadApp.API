@@ -1,9 +1,11 @@
-﻿namespace DyadApp.API.Models
+﻿using System.Collections.Generic;
+
+namespace DyadApp.API.Models
 {
-	public class Match: EntityBase
+	public class Match : EntityBase
 	{
 		public int MatchId { get; set; }
-		public int PrimaryUserId { get; set; }
-		public int SecondaryUserId { get; set; }
-	}
+        public List<UserMatch> UserMatches { get; set; }
+        public List<ChatMessage> ChatMessages { get; set; }
+    }
 }

@@ -35,6 +35,12 @@ namespace DyadApp.API.Controllers
         {
             var userId = User.GetUserId();
             var user = await _userRepository.GetUserById(userId);
+
+            if (user == null)
+            {
+                return BadRequest();
+            }
+
             var userProfile = user.ToUserProfileModel();
             return Ok(userProfile);
         }

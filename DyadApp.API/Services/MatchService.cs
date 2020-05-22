@@ -4,6 +4,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using DyadApp.API.Data.Repositories;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Diagnostics;
+using DyadApp.API.Converters;
+using DyadApp.API.ViewModels;
 
 namespace DyadApp.API.Services
 {
@@ -24,8 +28,8 @@ namespace DyadApp.API.Services
                 return true;
             }
 
-            var awaitingMatch = new AwaitingMatch {UserId = userId};
-            _context.AwaitingMatches.Add(awaitingMatch);
+			var awaitingMatch = new AwaitingMatch { UserId = userId };
+			_context.AwaitingMatches.Add(awaitingMatch);
 			await _context.SaveChangesAsync();
 
 			return true;
@@ -51,52 +55,71 @@ namespace DyadApp.API.Services
 
 
             awaitingMatch.IsMatched = true;
+            //TODO: lav user matches for de brugeres der er matchet
+
+            var userMatches = new List<UserMatch>
+            {
+                new UserMatch
+                {
+                    UserId = userToMatch.UserId,
+                },
+                new UserMatch
+                {
+                    UserId = awaitingMatch.UserId
+                }
+            };
+
+            //TODO: lav et match
+
             var match = new Match
             {
-				PrimaryUserId = userToMatch.UserId,
-				SecondaryUserId = awaitingMatch.UserId,
+                UserMatches = userMatches
             };
 
             _context.AwaitingMatches.Update(awaitingMatch);
+            await _context.SaveChangesAsync();
             _context.Matches.Add(match);
             await _context.SaveChangesAsync();
             return true;
+        }
 
+		public async Task<List<MatchViewModel>> RetreiveMatchList(int userId)
+		{
+            var matches = await _context.Matches
+                .Include(x => x.UserMatches)
+                .ThenInclude(um => um.User)
+                .Include(x => x.ChatMessages)
+                .Where(x => x.UserMatches.Any(z => z.UserId == userId))
+                .ToListAsync();
 
-            //foreach (var item in awaitingMatches)
-			//{
-			//	User user = new User();
-			//	user = _context.Users.Where(u => u.UserId == item.UserId).FirstOrDefault();
-			//	if(primeUser.DateOfBirth.Year == user.DateOfBirth.Year)
-			//	{
-			//		matchUser = user;
-			//		AwaitingMatch primeAW = new AwaitingMatch();
-			//		AwaitingMatch secondaryAW = new AwaitingMatch();
-			//		Match match = new Match();
+            return matches.ToMatchViewToModel(userId);
+        }
 
-			//		primeAW = _context.AwaitingMatches.Where(aw => aw.UserId == primeUser.UserId && aw.IsMatched == false ).FirstOrDefault();
-			//		secondaryAW = _context.AwaitingMatches.Where(aws => aws.UserId == matchUser.UserId && aws.IsMatched == false).FirstOrDefault();
-			//		primeAW.IsMatched = true;
-			//		secondaryAW.IsMatched = true;
-			//		_context.AwaitingMatches.Update(primeAW);
-			//		_context.AwaitingMatches.Update(secondaryAW);
-			//		_context.SaveChanges();
+        public async Task<MatchConversationModel> FetchChatMessages(int matchId, int userId)
+        {
+            var match = await _context.Matches
+                .Include(x => x.ChatMessages)
+                .Include(x => x.UserMatches)
+                .ThenInclude(um => um.User)
+                .Where(x => x.MatchId == matchId)
+                .SingleOrDefaultAsync();
+            
+            return match.ToChatMessageModels(userId);
+        }
 
+        public async Task MarkMessagesAsRead(int matchId, int userId)
+        {
+            var match = await _context.Matches.Include(x => x.ChatMessages).Where(x => x.MatchId == matchId)
+                .SingleOrDefaultAsync();
 
-			//		match.MatchedDate = DateTime.Now;
-			//		match.PrimaryUserID = primeAW.UserId;
-			//		match.SecondaryUserID = secondaryAW.UserId;
+            var chatMessages = match.ChatMessages.Where(x => x.ReceiverId == userId).Select(x =>
+            {
+                x.IsRead = true;
+                return x;
+            }).ToList();
 
-			//		_context.Matches.Add(match);
-			//		_context.SaveChanges();
-
-			//		return true;
-			//	}
-			//}
-
-			//return false;
-		}
-
-
-	}
+            _context.ChatMessages.UpdateRange(chatMessages);
+            await _context.SaveChangesAsync();
+        }
+    }
 }

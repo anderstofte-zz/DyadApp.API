@@ -9,7 +9,6 @@ using DyadApp.API.Services;
 using MailKit.Net.Smtp;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -48,6 +47,7 @@ namespace DyadApp.API
                         builder.
                             WithOrigins(
                                 "http://localhost:8080",
+                                "http://localhost:8080/",
                                 "https://vuetest.dyadapp.com"
                                 ).
                             AllowAnyHeader().
@@ -96,9 +96,6 @@ namespace DyadApp.API
                         OnMessageReceived = context =>
                         {
                             var accessToken = context.Request.Query["access_token"];
-
-                            // If the request is for our hub...
-                            var path = context.HttpContext.Request.Path;
                             if (!string.IsNullOrEmpty(accessToken))
                             {
                                 // Read the token out of the query string
