@@ -48,7 +48,9 @@ namespace DyadApp.API
                             WithOrigins(
                                 "http://localhost:8080",
                                 "http://localhost:8080/",
-                                "https://vuetest.dyadapp.com"
+                                "https://dev.dyadapp.com",
+                                "https://app.dyadapp.com",
+                                "https://dyadapp.com"
                                 ).
                             AllowAnyHeader().
                             AllowCredentials().
