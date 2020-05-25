@@ -32,7 +32,9 @@ namespace DyadApp.API.Converters
                 matchList.Add(model);
             }
 
-            return matchList;
+            var sortedMatchList = matchList.OrderByDescending(x =>
+                x.LastMessageTimeStamp > x.MatchCreated ? x.LastMessageTimeStamp : x.MatchCreated).ToList();
+            return sortedMatchList;
         }
 
         public static MatchConversationModel ToChatMessageModels(this Match match, int userId)
