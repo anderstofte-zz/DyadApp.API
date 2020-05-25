@@ -28,11 +28,13 @@ namespace DyadApp.API.Converters
                 model.LastMessageTimeStamp = match.ChatMessages.OrderByDescending(x => x.Created).Select(x => x.Created)
                     .FirstOrDefault();
                 model.MatchCreated = match.Created;
-                model.UnreadMessages = match.ChatMessages.Count(x => !x.IsRead);
+                model.UnreadMessages = match.ChatMessages.Where(x => x.ReceiverId == userId).Count(x => !x.IsRead);
                 matchList.Add(model);
             }
 
-            return matchList;
+            var sortedMatchList = matchList.OrderByDescending(x =>
+                x.LastMessageTimeStamp > x.MatchCreated ? x.LastMessageTimeStamp : x.MatchCreated).ToList();
+            return sortedMatchList;
         }
 
         public static MatchConversationModel ToChatMessageModels(this Match match, int userId)
