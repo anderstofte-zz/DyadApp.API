@@ -37,7 +37,7 @@ namespace DyadApp.API.Services
 
         private async Task<bool> UserIsAlreadyAwaitingAMatch(int userId)
         {
-            return await _context.AwaitingMatches.AnyAsync(x => x.UserId == userId);
+            return await _context.AwaitingMatches.AnyAsync(x => x.UserId == userId && !x.IsMatched);
         }
 
         public async Task <bool> SearchForMatch(int userId)
