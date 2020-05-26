@@ -29,11 +29,14 @@ namespace DyadApp.API.Converters
                     .FirstOrDefault();
                 model.MatchCreated = match.Created;
                 model.UnreadMessages = match.ChatMessages.Where(x => x.ReceiverId == userId).Count(x => !x.IsRead);
+                model.ShouldBlurProfileImage = match.ChatMessages.Count < 100;
+
                 matchList.Add(model);
             }
 
             var sortedMatchList = matchList.OrderByDescending(x =>
                 x.LastMessageTimeStamp > x.MatchCreated ? x.LastMessageTimeStamp : x.MatchCreated).ToList();
+
             return sortedMatchList;
         }
 

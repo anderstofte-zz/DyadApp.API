@@ -33,7 +33,7 @@ namespace DyadApp.API.Data
         private void PopulateAudit()
         {
             var userId = ClaimsPrincipal.Current.GetUserId();
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
             var entries = ChangeTracker.Entries();
             foreach (var entry in entries)
             {

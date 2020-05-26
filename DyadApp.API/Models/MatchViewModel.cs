@@ -12,5 +12,6 @@ namespace DyadApp.API.Models
 		public DateTime LastMessageTimeStamp { get; set; }
         public DateTime MatchCreated { get; set; }
         public int UnreadMessages { get; set; }
+        public bool ShouldBlurProfileImage { get; set; }
 	}
 }

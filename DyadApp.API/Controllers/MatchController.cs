@@ -16,10 +16,11 @@ namespace DyadApp.API.Controllers
     {
 
         private readonly IMatchService _matchService;
-
-        public MatchController(IMatchService matchService)
+        private readonly IChatService _chatService;
+        public MatchController(IMatchService matchService, IChatService chatService)
         {
             _matchService = matchService;
+            _chatService = chatService;
         }
 
         [HttpPost("AwaitingMatch")]
@@ -49,23 +50,23 @@ namespace DyadApp.API.Controllers
             return Ok("Vi fandt et nyt match!");
         }
 
-        [HttpGet("RetreiveMatchList")]
-        public async Task<List<MatchViewModel>> RetreiveMatchList()
+        [HttpGet("FetchMatches")]
+        public async Task<List<MatchViewModel>> FetchMatches()
         {
             var userId = User.GetUserId();
-            return await _matchService.RetreiveMatchList(userId);
+            return await _matchService.FetchMatches(userId);
         }
 
         [HttpGet("{id}")]
         public async Task<MatchConversationModel> FetchChat(int id)
         {
-            return await _matchService.FetchChatMessages(id, User.GetUserId());
+            return await _chatService.FetchChatMessages(id, User.GetUserId());
         }
 
         [HttpPost("Read/{id}")]
         public async Task MessagesIsRead(int id)
         {
-             await _matchService.MarkMessagesAsRead(id, User.GetUserId());
+             await _chatService.MarkMessagesAsRead(id, User.GetUserId());
         }
     }
 }

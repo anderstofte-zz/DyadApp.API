@@ -117,10 +117,12 @@ namespace DyadApp.API
             services.AddTransient<ISecretKeyService, SecretKeyService>();
 
             services.AddTransient<IMatchService, MatchService>();
-
+            services.AddTransient<IChatService, ChatService>();
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
             services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<IChatRepository, ChatRepository>();
+            services.AddScoped<IMatchRepository, MatchRepository>();
             services.AddScoped<IAuthenticationRepository, AuthenticationRepository>();
 
             services.AddSignalR()

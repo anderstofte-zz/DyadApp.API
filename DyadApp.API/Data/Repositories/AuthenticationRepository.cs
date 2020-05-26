@@ -18,7 +18,7 @@ namespace DyadApp.API.Data.Repositories
         public async Task<Signup> GetSignupByToken(string token)
         {
             return await _context.Signups
-                .Where(s => s.Token == token && s.ExpirationDate > DateTime.UtcNow && s.AcceptDate == null)
+                .Where(s => s.Token == token && s.ExpirationDate > DateTime.Now && s.AcceptDate == null)
                 .SingleOrDefaultAsync();
         }
 

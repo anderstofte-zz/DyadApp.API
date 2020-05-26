@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Threading.Tasks;
 using DyadApp.API.Data;
 using DyadApp.API.Data.Repositories;
@@ -10,7 +9,6 @@ using DyadApp.API.Services;
 using DyadApp.API.ViewModels;
 using DyadApp.Emails;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace DyadApp.API.Controllers
 {
@@ -23,15 +21,13 @@ namespace DyadApp.API.Controllers
         private readonly IAuthenticationService _authenticationService;
         private readonly ISecretKeyService _keyService;
         private readonly IEmailService _emailService;
-        private readonly DyadAppContext _context;
-        public AuthenticationController(IAuthenticationService authenticationService, ISecretKeyService keyService, IEmailService emailService, IAuthenticationRepository authenticationRepository, IUserRepository userRepository, DyadAppContext context)
+        public AuthenticationController(IAuthenticationService authenticationService, ISecretKeyService keyService, IEmailService emailService, IAuthenticationRepository authenticationRepository, IUserRepository userRepository)
         {
             _authenticationService = authenticationService;
             _keyService = keyService;
             _emailService = emailService;
             _authenticationRepository = authenticationRepository;
             _userRepository = userRepository;
-            _context = context;
         }
 
         [HttpPost]
@@ -69,7 +65,7 @@ namespace DyadApp.API.Controllers
 
             var user = await _userRepository.GetUserById(signup.UserId);
 
-            signup.AcceptDate = DateTime.UtcNow;
+            signup.AcceptDate = DateTime.Now;
             user.Verified = true;
 
             try
@@ -129,7 +125,7 @@ namespace DyadApp.API.Controllers
             var resetPasswordToken = new ResetPasswordToken
             {
                 Token = token,
-                ExpirationDate = DateTime.UtcNow.AddMinutes(30),
+                ExpirationDate = DateTime.Now.AddMinutes(30),
                 UserId = user.UserId
             };
 
@@ -168,9 +164,9 @@ namespace DyadApp.API.Controllers
             user.Password = hashedPassword.Password;
             user.Salt = hashedPassword.Salt;
 
-            _context.ResetPasswordTokens.Remove(resetToken);
-
             await _userRepository.UpdateAsync(user);
+            await _authenticationRepository.DeleteTokenAsync(resetToken);
+            
 
             return Ok();
         }

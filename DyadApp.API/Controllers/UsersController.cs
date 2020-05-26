@@ -77,7 +77,7 @@ namespace DyadApp.API.Controllers
             user.Signups.Add(new Signup
             {
                 Token = signupToken,
-                ExpirationDate = DateTime.UtcNow.AddDays(2),
+                ExpirationDate = DateTime.Now.AddDays(2),
                 AcceptDate = null
             });
 
@@ -134,7 +134,7 @@ namespace DyadApp.API.Controllers
         }
 
         [HttpPost("ChangePassword")]
-        public async Task<IActionResult> ChangePassword([FromBody] PasswordModel model)
+        public async Task<IActionResult> ChangePassword(PasswordModel model)
         {
             if (!ModelState.IsValid)
             {
@@ -151,7 +151,7 @@ namespace DyadApp.API.Controllers
             var submittedCurrentPasswordIsValid = user.ValidatePassword(model.CurrentPassword);
             if (!submittedCurrentPasswordIsValid)
             {
-                return BadRequest("Den angivede nuværende adgangskode er forkert.");
+                return BadRequest("Den angivede adgangskode er forkert.");
             }
 
             var newPasswordHashed = PasswordHelper.GenerateHashedPassword(model.NewPassword);
