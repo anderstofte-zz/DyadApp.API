@@ -1,50 +1,76 @@
 ﻿using System;
 using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
-using DyadApp.API.Data;
+using DyadApp.API.Data.Repositories;
+using DyadApp.API.Extensions;
+using DyadApp.API.Helpers;
 using DyadApp.API.Models;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 
 namespace DyadApp.API.Services
 {
     public class AuthenticationService : IAuthenticationService
     {
-        private readonly DyadAppContext _context;
+        private readonly IAuthenticationRepository _authenticationRepository;
+        private readonly ISecretKeyService _keyService;
 
-        public AuthenticationService(DyadAppContext context)
+        public AuthenticationService(ISecretKeyService keyService, IAuthenticationRepository authenticationRepository)
         {
-            _context = context;
+            _keyService = keyService;
+            _authenticationRepository = authenticationRepository;
         }
 
-        public async Task<string> Authenticate(string email, string password)
+        public async Task<IActionResult> Authenticate(string email, string password)
         {
-            var user = await _context.Users.Where(x => x.Email == email && x.Password == password).SingleOrDefaultAsync();
-
+            var user = await _authenticationRepository.GetUserCredentialsByEmail(email);
             if (user == null)
             {
-                return null;
+                return new BadRequestObjectResult("Den indtastede email findes ikke i systemet.");
             }
 
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var token = tokenHandler.CreateToken(SetUpToken(user));
-            return tokenHandler.WriteToken(token);
+
+
+            var isSubmittedPasswordValid = user.ValidatePassword(password);
+            if (!isSubmittedPasswordValid)
+            {
+                return new BadRequestObjectResult("Den indtastede adgangskode er forkert.");
+            }
+
+            return new OkObjectResult(await GenerateTokens(user.UserId));
         }
 
-        private static SecurityTokenDescriptor SetUpToken(User user)
+        public async Task<AuthenticationTokens> GenerateTokens(int userId)
         {
-            var key = Encoding.ASCII.GetBytes(System.IO.File.ReadAllText("key.txt"));
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var accessToken = tokenHandler.CreateToken(SetUpToken(userId));
+
+            var refreshToken = RefreshTokenHelper.Generate(userId);
+
+            await _authenticationRepository.CreateTokenAsync(refreshToken);
+
+            var authenticationTokens = new AuthenticationTokens
+            {
+                AccessToken = tokenHandler.WriteToken(accessToken),
+                RefreshToken = refreshToken.Token
+            };
+
+            return authenticationTokens;
+        }
+
+        private SecurityTokenDescriptor SetUpToken(int userId)
+        {
+            var key = Encoding.ASCII.GetBytes(_keyService.GetSecretKey());
             return new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(new Claim[]
                 {
-                    new Claim(ClaimTypes.Name, user.UserId.ToString())
+                    new Claim(ClaimTypes.Name, userId.ToString())
                 }),
-                Expires = DateTime.UtcNow.AddDays(7),
-                IssuedAt = DateTime.UtcNow,
+                Expires = DateTime.Now.AddMinutes(30),
+                IssuedAt = DateTime.Now,
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
             };
         }
