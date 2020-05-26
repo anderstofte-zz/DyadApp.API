@@ -1,0 +1,2 @@
+call flyway migrate
+pause
