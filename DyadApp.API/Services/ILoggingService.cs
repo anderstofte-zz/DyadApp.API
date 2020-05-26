@@ -1,12 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+using DyadApp.API.Models;
 
 namespace DyadApp.API.Services
 {
 	public interface ILoggingService
 	{
-		void SaveLog(string LogDesc, string type);
+		Task SaveAuditLog(string description, AuditActionEnum action);
 	}
 }
