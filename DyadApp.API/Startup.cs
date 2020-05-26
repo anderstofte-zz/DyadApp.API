@@ -111,6 +111,7 @@ namespace DyadApp.API
                 });
 
             services.AddScoped<IAuthenticationService, AuthenticationService>();
+            services.AddTransient<ILoggingService, LoggingService>();
 
             services.Configure<SmtpOptions>(Configuration.GetSection("Smtp"));
             services.AddTransient<SmtpClient>();
