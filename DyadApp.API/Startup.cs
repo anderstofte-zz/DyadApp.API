@@ -18,6 +18,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+
 
 namespace DyadApp.API
 {
@@ -129,6 +131,11 @@ namespace DyadApp.API
                 .AddHubOptions<ChatHub>(options => options.EnableDetailedErrors = true);
 
             services.AddSingleton<IUserIdProvider, NameUserIdProvider>();
+
+            services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "Dyad API", Version = "v1" });
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -138,6 +145,13 @@ namespace DyadApp.API
             {
                 app.UseDeveloperExceptionPage();
             }
+
+            app.UseSwagger();
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Dyad API v1");
+
+            });
 
             app.UseHttpsRedirection();
 
