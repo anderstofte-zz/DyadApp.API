@@ -1,34 +1,51 @@
-﻿using DyadApp.API.Data;
-using DyadApp.API.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading.Tasks;
+using DyadApp.API.Converters;
+using DyadApp.API.Data.Repositories;
+using DyadApp.API.Models;
+using DyadApp.API.ViewModels;
 
 namespace DyadApp.API.Services
 {
 	public class ChatService : IChatService
-	{
+    {
+        private readonly IChatRepository _chatRepository;
 
-		private readonly DyadAppContext _context;
+        public ChatService(IChatRepository chatRepository)
+        {
+            _chatRepository = chatRepository;
+        }
 
-		public ChatService(DyadAppContext context)
+        public async Task AddMessage(NewChatMessageModel model)
 		{
-			_context = context;
-		}
+            var chatMessage = new ChatMessage
+            {
+                MatchId = model.MatchId, 
+                Message = model.Message, 
+                SenderId = model.SenderId, 
+                ReceiverId = model.ReceiverId
+            };
 
-		public void AddMessage(int senderId, int receiverId, string message)
-		{
-			ChatMessage chatMessage = new ChatMessage
-			{
-				Message = message,
-				SenderId = senderId,
-				ReceiverId = receiverId
-			};
-			_context.Add(chatMessage);
-			_context.SaveChangesAsync();
+            await _chatRepository.AddMessage(chatMessage);
+        }
 
-		}
+        public async Task<MatchConversationModel> FetchChatMessages(int matchId, int userId)
+        {
+            var match = await _chatRepository.FetchChatMessages(userId);
+            return match.ToChatMessageModels(userId);
+        }
 
-	}
+        public async Task MarkMessagesAsRead(int matchId, int userId)
+        {
+            var match = await _chatRepository.FetchMatch(matchId);
+
+            var chatMessages = match.ChatMessages.Where(x => x.ReceiverId == userId).Select(x =>
+            {
+                x.IsRead = true;
+                return x;
+            }).ToList();
+
+            await _chatRepository.UpdateChatMessages(chatMessages);
+        }
+    }
 }

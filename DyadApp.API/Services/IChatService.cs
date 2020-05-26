@@ -1,12 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+using DyadApp.API.ViewModels;
 
 namespace DyadApp.API.Services
 {
 	public interface IChatService
 	{
-		void AddMessage(int SenderId, int ReceiverId, string Message);
+		Task AddMessage(NewChatMessageModel model);
+        Task<MatchConversationModel> FetchChatMessages(int matchId, int userId);
+        Task MarkMessagesAsRead(int matchId, int userId);
 	}
 }
