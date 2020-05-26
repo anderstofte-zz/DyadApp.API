@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Threading.Tasks;
-using DyadApp.API.Data;
 using DyadApp.API.Data.Repositories;
 using DyadApp.API.Extensions;
 using DyadApp.API.Helpers;
@@ -21,18 +20,22 @@ namespace DyadApp.API.Controllers
         private readonly IAuthenticationService _authenticationService;
         private readonly ISecretKeyService _keyService;
         private readonly IEmailService _emailService;
-        public AuthenticationController(IAuthenticationService authenticationService, ISecretKeyService keyService, IEmailService emailService, IAuthenticationRepository authenticationRepository, IUserRepository userRepository)
+        private readonly ILoggingService _loggingService;
+        public AuthenticationController(IAuthenticationService authenticationService, ISecretKeyService keyService, IEmailService emailService, IAuthenticationRepository authenticationRepository, IUserRepository userRepository, ILoggingService loggingService)
         {
             _authenticationService = authenticationService;
             _keyService = keyService;
             _emailService = emailService;
             _authenticationRepository = authenticationRepository;
             _userRepository = userRepository;
+            _loggingService = loggingService;
         }
 
         [HttpPost]
         public async Task<IActionResult> AuthenticateUser([FromBody] AuthenticationUserModel model)
         {
+            await _loggingService.SaveAuditLog("Login process initiated", AuditActionEnum.Login);
+
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState.FirstError());
@@ -56,6 +59,7 @@ namespace DyadApp.API.Controllers
         [HttpPost("VerifySignupToken")]
         public async Task<IActionResult> VerifyUser([FromBody] SignupTokenModel model)
         {
+            await _loggingService.SaveAuditLog($"Verifying sign up token: {model.Token}.", AuditActionEnum.Signup);
             var signup = await _authenticationRepository.GetSignupByToken(model.Token);
 
             if (signup == null)
@@ -83,6 +87,8 @@ namespace DyadApp.API.Controllers
         [HttpPost("Refresh")]
         public async Task<IActionResult> RefreshTokens([FromBody]AuthenticationTokens authenticationTokens)
         {
+            await _loggingService.SaveAuditLog($"Refreshing tokens for user with user id {User.GetUserId()}",
+                AuditActionEnum.TokenRefresh);
             int userId;
             try
             {
@@ -100,6 +106,9 @@ namespace DyadApp.API.Controllers
             }
 
             var newTokens = await _authenticationService.GenerateTokens(userId);
+
+            await _loggingService.SaveAuditLog($"Deleting old refresh token for user with user id {userId}",
+                AuditActionEnum.Delete);
             await _authenticationRepository.DeleteTokenAsync(refreshToken);
 
             return Ok(newTokens);
@@ -107,12 +116,16 @@ namespace DyadApp.API.Controllers
 
         private async Task<RefreshToken> GetRefreshToken(string refreshToken, int userId)
         {
+            await _loggingService.SaveAuditLog($"Reading refresh token for user with id {userId}",
+                AuditActionEnum.Read);
             return await _authenticationRepository.GetRefreshToken(userId, refreshToken);
         }
 
         [HttpPost("ResetPassword")]
         public async Task<IActionResult> ResetPassword(ResetPasswordRequestModel model)
         {
+            await _loggingService.SaveAuditLog($"Retrieving user with email {model.Email}", AuditActionEnum.Read);
+
             var user = await _userRepository.GetByEmail(model.Email);
 
             if (user == null)
@@ -129,6 +142,8 @@ namespace DyadApp.API.Controllers
                 UserId = user.UserId
             };
 
+            await _loggingService.SaveAuditLog($"Creating reset-password token for user with user id {user.UserId}",
+                AuditActionEnum.Create);
             await _authenticationRepository.CreateTokenAsync(resetPasswordToken);
 
             var resetPasswordRequest = new ResetPasswordRequest
@@ -148,6 +163,8 @@ namespace DyadApp.API.Controllers
                 return BadRequest(ModelState.FirstError());
             }
 
+            await _loggingService.SaveAuditLog($"Retrieving user with email {model.Email} for updating password.",
+                AuditActionEnum.Read);
             var user = await _userRepository.GetUserForPasswordUpdate(model.Token, model.Email);
             if (user == null)
             {
@@ -164,9 +181,11 @@ namespace DyadApp.API.Controllers
             user.Password = hashedPassword.Password;
             user.Salt = hashedPassword.Salt;
 
+            await _loggingService.SaveAuditLog($"Updating user with user id {user.UserId}.", AuditActionEnum.Update);
             await _userRepository.UpdateAsync(user);
+            await _loggingService.SaveAuditLog($"Deleting reset token for user with user id {user.UserId}",
+                AuditActionEnum.Delete);
             await _authenticationRepository.DeleteTokenAsync(resetToken);
-            
 
             return Ok();
         }

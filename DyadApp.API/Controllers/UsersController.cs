@@ -23,19 +23,23 @@ namespace DyadApp.API.Controllers
         private readonly IEmailService _emailService;
         private readonly IUserRepository _repository;
         private readonly IUserRepository _userRepository;
-        public UsersController(IEmailService emailService, IUserRepository repository, IUserRepository userRepository)
+        private readonly ILoggingService _loggingService;
+        public UsersController(IEmailService emailService, IUserRepository repository, IUserRepository userRepository, ILoggingService loggingService)
         {
             _emailService = emailService;
             _repository = repository;
             _userRepository = userRepository;
+            _loggingService = loggingService;
         }
 
         [HttpGet]
         public async Task<IActionResult> UserProfile()
         {
             var userId = User.GetUserId();
-            var user = await _userRepository.GetUserById(userId);
+            await _loggingService.SaveAuditLog($"Retrieving profile for user with user id {userId}",
+                AuditActionEnum.Read);
 
+            var user = await _userRepository.GetUserById(userId);
             if (user == null)
             {
                 return BadRequest();
@@ -61,6 +65,7 @@ namespace DyadApp.API.Controllers
         [AllowAnonymous]
         public async Task<ActionResult> CreateUser([FromBody] CreateUserModel model)
         {
+            await _loggingService.SaveAuditLog("Creating user process initiated.", AuditActionEnum.Create);
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState.FirstError());
@@ -89,12 +94,15 @@ namespace DyadApp.API.Controllers
         [HttpPatch]
         public async Task<IActionResult> Patch([FromBody] JsonPatchDocument<User> patchDoc)
         {
+            var userId = User.GetUserId();
+
+            await _loggingService.SaveAuditLog($"Updating user with user id {userId} process initiated.",
+                AuditActionEnum.Update);
             if (patchDoc == null)
             {
                 return BadRequest(ModelState);
             }
 
-            var userId = User.GetUserId();
             var user = await _userRepository.GetUserById(userId);
 
             if (user == null)
@@ -136,12 +144,15 @@ namespace DyadApp.API.Controllers
         [HttpPost("ChangePassword")]
         public async Task<IActionResult> ChangePassword(PasswordModel model)
         {
+            var userId = User.GetUserId();
+            await _loggingService.SaveAuditLog($"Updating password for user with user id {userId} process initiated.",
+                AuditActionEnum.Update);
+
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState.FirstError());
             }
 
-            var userId = User.GetUserId();
             var user = await _userRepository.GetUserById(userId);
             if (user == null)
             {

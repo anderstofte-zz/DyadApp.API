@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using DyadApp.API.Extensions;
 using DyadApp.API.Models;
 using DyadApp.API.Services;
-using DyadApp.API.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,23 +11,25 @@ namespace DyadApp.API.Controllers
     [Authorize]
     [ApiController]
     [Route("[controller]")]
-    public class MatchController : Controller
+    public class MatchController : ControllerBase
     {
-
         private readonly IMatchService _matchService;
-        private readonly IChatService _chatService;
-        public MatchController(IMatchService matchService, IChatService chatService)
+        private readonly ILoggingService _loggingService;
+        public MatchController(IMatchService matchService, ILoggingService loggingService)
         {
             _matchService = matchService;
-            _chatService = chatService;
+            _loggingService = loggingService;
         }
 
         [HttpPost("AwaitingMatch")]
         public async Task<IActionResult> AwaitingMatch()
         {
             var userId = User.GetUserId();
+
+            await _loggingService.SaveAuditLog($"Creating awating match for user with user id {userId}",
+                AuditActionEnum.Create);
+
             var isAddedToQueueOfAwaitingMatches = await _matchService.AddToAwaitingMatch(userId);
-            
             if (!isAddedToQueueOfAwaitingMatches)
             {
                 return BadRequest("Der gik noget galt.");
@@ -41,8 +42,11 @@ namespace DyadApp.API.Controllers
         public async Task<IActionResult> Match()
         {
             var userId = User.GetUserId();
-            var isMatchFound = await _matchService.SearchForMatch(userId);
 
+            await _loggingService.SaveAuditLog($"Match process initiated for user with user id {userId}",
+                AuditActionEnum.Match);
+
+            var isMatchFound = await _matchService.SearchForMatch(userId);
             if(!isMatchFound)
             {
                 return BadRequest();
@@ -54,19 +58,10 @@ namespace DyadApp.API.Controllers
         public async Task<List<MatchViewModel>> FetchMatches()
         {
             var userId = User.GetUserId();
+            await _loggingService.SaveAuditLog($"Retrieving matches for user with user id {userId}",
+                AuditActionEnum.Read);
+
             return await _matchService.FetchMatches(userId);
-        }
-
-        [HttpGet("{id}")]
-        public async Task<MatchConversationModel> FetchChat(int id)
-        {
-            return await _chatService.FetchChatMessages(id, User.GetUserId());
-        }
-
-        [HttpPost("Read/{id}")]
-        public async Task MessagesIsRead(int id)
-        {
-             await _chatService.MarkMessagesAsRead(id, User.GetUserId());
         }
     }
 }
