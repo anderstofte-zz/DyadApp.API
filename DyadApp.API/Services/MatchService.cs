@@ -1,8 +1,8 @@
-﻿using DyadApp.API.Data;
-using DyadApp.API.Models;
+﻿using DyadApp.API.Models;
 using System.Threading.Tasks;
 using DyadApp.API.Data.Repositories;
 using System.Collections.Generic;
+using System.Linq;
 using DyadApp.API.Converters;
 
 namespace DyadApp.API.Services
@@ -32,14 +32,15 @@ namespace DyadApp.API.Services
 
         private async Task<bool> UserIsAlreadyAwaitingAMatch(int userId)
         {
-            return await _matchRepository.UserIsAlreadyAwaitingAMatch(userId);
+            var awaitingMatch = await _matchRepository.GetAwaitingMatchByUserId(userId);
+            return awaitingMatch != null; 
         }
 
         public async Task <bool> SearchForMatch(int userId)
 		{
 			var userToMatch = await _userRepository.GetUserById(userId);
 
-            var awaitingMatch = await _matchRepository.GetAwaitingMatch(userToMatch);
+            var awaitingMatch = await GetAwaitingMatchToMatchWithUser(userToMatch);
             if (awaitingMatch == null)
             {
                 return false;
@@ -69,9 +70,20 @@ namespace DyadApp.API.Services
             return true;
         }
 
-		public async Task<List<MatchViewModel>> FetchMatches(int userId)
+        private async Task<AwaitingMatch> GetAwaitingMatchToMatchWithUser(User userToMatch)
         {
-            var matches = await _matchRepository.GetMatchList(userId);
+            var awaitingMatches = await _matchRepository.GetAwaitingMatches();
+
+            var filteredAndSortedAwaitingMatches = awaitingMatches?.Where(x =>
+                    x.User.DateOfBirth.Year == userToMatch.DateOfBirth.Year && x.UserId != userToMatch.UserId)
+                .OrderBy(x => x.Created);
+
+            return filteredAndSortedAwaitingMatches?.FirstOrDefault();
+        }
+
+        public async Task<List<MatchViewModel>> FetchMatches(int userId)
+        {
+            var matches = await _matchRepository.GetMatches(userId);
 
             return matches.ToMatchViewToModel(userId);
         }
