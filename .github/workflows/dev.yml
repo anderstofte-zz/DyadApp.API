@@ -15,6 +15,8 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 3.1.101
+    - name: CHeck dir
+      run: ls /home/runner/work/DyadApp.API/DyadApp.API
     - name: Install dependencies
       run: dotnet restore /home/runner/work/DyadApp.API/DyadApp.API/DyadApp.API.sln
     - name: Build
