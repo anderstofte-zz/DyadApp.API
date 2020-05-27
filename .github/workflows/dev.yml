@@ -16,13 +16,9 @@ jobs:
       with:
         dotnet-version: 3.1.101
     - name: Install dependencies
-      run: dotnet restore /home/runner/work/DyadApp.API/DyadApp.API/DyadApp.API/DyadApp.API.csproj
+      run: dotnet restore /home/runner/work/DyadApp.API/DyadApp.API/DyadApp.API/DyadApp.API.sln
     - name: Build
-      run: dotnet build /home/runner/work/DyadApp.API/DyadApp.API/DyadApp.API/DyadApp.API.csproj --configuration Release --no-restore
-    - name: Check directory
-      run: ls /home/runner/work/DyadApp.API/DyadApp.API/DyadApp.Tests
-    - name: List directory
-      run: pwd /home/runner/work/DyadApp.API/DyadApp.API/DyadApp.Tests
+      run: dotnet build /home/runner/work/DyadApp.API/DyadApp.API/DyadApp.API/DyadApp.API.sln --configuration Release --no-restore
     - name: Test
       run: dotnet test /home/runner/work/DyadApp.API/DyadApp.API/DyadApp.API.sln
     - name: Get flyway
