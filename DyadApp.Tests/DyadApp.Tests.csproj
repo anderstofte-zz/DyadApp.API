@@ -2,9 +2,6 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-	<runtimeidentifiers>win-x86</runtimeidentifiers>
-	<Platforms>x86</Platforms>
-    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
