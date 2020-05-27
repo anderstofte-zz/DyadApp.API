@@ -24,7 +24,7 @@ jobs:
     - name: List directory
       run: pwd /home/runner/work/DyadApp.API/DyadApp.API/DyadApp.Tests
     - name: Test
-      run: dotnet test /home/runner/work/DyadApp.API/DyadApp.API/DyadApp.Tests/DyadApp.Tests.csproj --no-restore 
+      run: dotnet test /home/runner/work/DyadApp.API/DyadApp.API/DyadApp.API.sln
     - name: Get flyway
       run: wget -qO- https://repo1.maven.org/maven2/org/flywaydb/flyway-commandline/6.3.3/flyway-commandline-6.3.3-linux-x64.tar.gz | tar xvz && sudo ln -s `pwd`/flyway-6.3.3/flyway /usr/local/bin
     - name: Run migration on database 
