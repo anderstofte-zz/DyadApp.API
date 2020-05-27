@@ -9,8 +9,8 @@ namespace DyadApp.API.Data.Repositories
         Task AddMatch(Match match);
         Task AddAwaitingMatch(AwaitingMatch awaitingMatch);
         Task UpdateAwaitingMatch(AwaitingMatch awaitingMatch);
-        Task<bool> UserIsAlreadyAwaitingAMatch(int userId);
-        Task<AwaitingMatch> GetAwaitingMatch(User userToMatch);
-        Task<List<Match>> GetMatchList(int userId);
+        Task<AwaitingMatch> GetAwaitingMatchByUserId(int userId);
+        Task<List<AwaitingMatch>> GetAwaitingMatches();
+        Task<List<Match>> GetMatches(int userId);
     }
 }

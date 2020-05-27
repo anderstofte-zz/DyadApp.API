@@ -31,8 +31,6 @@ namespace DyadApp.API.Services
                 return new BadRequestObjectResult("Den indtastede email findes ikke i systemet.");
             }
 
-
-
             var isSubmittedPasswordValid = user.ValidatePassword(password);
             if (!isSubmittedPasswordValid)
             {
