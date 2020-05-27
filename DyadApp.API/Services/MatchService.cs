@@ -72,7 +72,7 @@ namespace DyadApp.API.Services
 
         private async Task<AwaitingMatch> GetAwaitingMatchToMatchWithUser(User userToMatch)
         {
-            var awaitingMatches = await _matchRepository.GetAwaitingMatches(userToMatch);
+            var awaitingMatches = await _matchRepository.GetAwaitingMatches();
 
             var filteredAndSortedAwaitingMatches = awaitingMatches?.Where(x =>
                     x.User.DateOfBirth.Year == userToMatch.DateOfBirth.Year && x.UserId != userToMatch.UserId)
