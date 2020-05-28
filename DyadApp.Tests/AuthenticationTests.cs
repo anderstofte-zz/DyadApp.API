@@ -43,18 +43,6 @@ namespace DyadApp.Tests
             Assert.False(isPasswordValid);
         }
 
-        [Theory]
-        [InlineData("Test1234")]
-        [InlineData("78AU!#PFaq")]
-        [InlineData("KoDeÆ2Ø_Å")]
-        public void Generate_hash_of_password(string password)
-        {
-            var hashedPasswordAndSalt = PasswordHelper.GenerateHashedPassword(password);
-            var buffer = new Span<byte>(new byte[hashedPasswordAndSalt.Password.Length]);
-
-            Assert.True(Convert.TryFromBase64String(hashedPasswordAndSalt.Password, buffer, out var bytesWritten));
-        }
-
         [Fact]
         public void Refresh_token_expire_before_31_days()
         {

@@ -40,7 +40,7 @@ namespace DyadApp.API.Data.Repositories
 
         public async Task<List<AwaitingMatch>> GetAwaitingMatches()
         {
-            return await _context.AwaitingMatches.Where(x => !x.IsMatched).ToListAsync();
+            return await _context.AwaitingMatches.Where(x => !x.IsMatched).Include(x => x.User).ToListAsync();
         }
 
         public async Task<List<Match>> GetMatches(int userId)

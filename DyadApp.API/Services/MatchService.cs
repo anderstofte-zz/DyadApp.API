@@ -4,6 +4,8 @@ using DyadApp.API.Data.Repositories;
 using System.Collections.Generic;
 using System.Linq;
 using DyadApp.API.Converters;
+using DyadApp.API.Extensions;
+using Microsoft.Extensions.Configuration;
 
 namespace DyadApp.API.Services
 {
@@ -11,10 +13,13 @@ namespace DyadApp.API.Services
 	{
         private readonly IUserRepository _userRepository;
         private readonly IMatchRepository _matchRepository;
-		public MatchService(IUserRepository userRepository, IMatchRepository matchRepository)
+        private readonly IConfiguration _configuration;
+
+		public MatchService(IUserRepository userRepository, IMatchRepository matchRepository, IConfiguration configuration)
         {
             _userRepository = userRepository;
             _matchRepository = matchRepository;
+            _configuration = configuration;
         }
 
 		public async Task<bool> AddToAwaitingMatch(int userId)
@@ -73,8 +78,12 @@ namespace DyadApp.API.Services
         private async Task<AwaitingMatch> GetAwaitingMatchToMatchWithUser(User userToMatch)
         {
             var awaitingMatches = await _matchRepository.GetAwaitingMatches();
+            if (awaitingMatches == null)
+            {
 
-            var filteredAndSortedAwaitingMatches = awaitingMatches?.Where(x =>
+            }
+
+            var filteredAndSortedAwaitingMatches = awaitingMatches.Where(x =>
                     x.User.DateOfBirth.Year == userToMatch.DateOfBirth.Year && x.UserId != userToMatch.UserId)
                 .OrderBy(x => x.Created);
 
@@ -84,8 +93,8 @@ namespace DyadApp.API.Services
         public async Task<List<MatchViewModel>> FetchMatches(int userId)
         {
             var matches = await _matchRepository.GetMatches(userId);
-
-            return matches.ToMatchViewToModel(userId);
+            var encryptionKey = _configuration.GetEncryptionKey();
+            return matches.ToMatchViewToModel(userId, encryptionKey);
         }
     }
 }

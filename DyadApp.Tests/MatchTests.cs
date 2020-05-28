@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using DyadApp.API.Data.Repositories;
 using DyadApp.API.Models;
 using DyadApp.API.Services;
+using Microsoft.Extensions.Configuration;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Xunit;
@@ -43,6 +44,7 @@ namespace DyadApp.Tests
 
             var mockMatchRepo = new Mock<IMatchRepository>();
             var mockUserRepo = new Mock<IUserRepository>();
+            var mockConfiguration = new Mock<IConfiguration>();
             mockMatchRepo.Setup(repo => repo.GetAwaitingMatchByUserId(userId))
                 .ReturnsAsync(awaitingMatches.SingleOrDefault(x => x.UserId == userId ));
 
@@ -51,7 +53,7 @@ namespace DyadApp.Tests
                 {
                     awaitingMatches.Add(aw);
                 }).Returns(Task.CompletedTask);
-            var mockMatchService = new MatchService(mockUserRepo.Object, mockMatchRepo.Object);
+            var mockMatchService = new MatchService(mockUserRepo.Object, mockMatchRepo.Object, mockConfiguration.Object);
 
 
             await mockMatchService.AddToAwaitingMatch(userId);

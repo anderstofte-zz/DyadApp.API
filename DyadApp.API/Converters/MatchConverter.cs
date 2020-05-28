@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using DyadApp.API.Helpers;
 using DyadApp.API.Models;
 using DyadApp.API.ViewModels;
 
@@ -8,7 +9,7 @@ namespace DyadApp.API.Converters
 {
     public static class MatchConverter
     {
-        public static List<MatchViewModel> ToMatchViewToModel(this List<Match> matches, int userId)
+        public static List<MatchViewModel> ToMatchViewToModel(this List<Match> matches, int userId, string encryptionKey)
         {
             var matchList = new List<MatchViewModel>();
 
@@ -23,8 +24,13 @@ namespace DyadApp.API.Converters
                 }
 
                 model.MatchId = match.MatchId;
-                model.LastMessage = match.ChatMessages.OrderByDescending(x => x.Created).Select(x => x.Message)
-                    .FirstOrDefault();
+
+                if (match.ChatMessages.Count > 0)
+                {
+                    model.LastMessage = EncryptionHelper.Decrypt(
+                        match.ChatMessages.OrderByDescending(x => x.Created).Select(x => x.Message).FirstOrDefault(),
+                        encryptionKey);
+                }
                 model.LastMessageTimeStamp = match.ChatMessages.OrderByDescending(x => x.Created).Select(x => x.Created)
                     .FirstOrDefault();
                 model.MatchCreated = match.Created;
@@ -44,7 +50,11 @@ namespace DyadApp.API.Converters
         {
             var chatMessages = match.ChatMessages
                 .OrderBy(x => x.Created)
-                .Select(chatMessage => new ChatMessageModel {Message = chatMessage.Message, UserId = chatMessage.SenderId, Sent = chatMessage.Created}).ToList();
+                .Select(chatMessage => new ChatMessageModel
+                {
+                    Message = chatMessage.Message != null ? EncryptionHelper.Decrypt(chatMessage.Message, "n2r5u8x/A?D(G+Ka") : null, 
+                    UserId = chatMessage.SenderId, Sent = chatMessage.Created
+                }).ToList();
 
             return new MatchConversationModel
             {
