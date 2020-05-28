@@ -6,6 +6,7 @@ using DyadApp.API.Data.Repositories;
 using DyadApp.API.Hubs;
 using DyadApp.API.Providers;
 using DyadApp.API.Services;
+using DyadApp.Emails;
 using MailKit.Net.Smtp;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
@@ -19,7 +20,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-
 
 namespace DyadApp.API
 {
@@ -117,6 +117,9 @@ namespace DyadApp.API
             services.AddTransient<SmtpClient>();
 
             services.AddTransient<IEmailService, EmailService>();
+
+            services.AddEmailConfiguration(Configuration);
+
 
             services.AddTransient<IMatchService, MatchService>();
             services.AddTransient<IChatService, ChatService>();

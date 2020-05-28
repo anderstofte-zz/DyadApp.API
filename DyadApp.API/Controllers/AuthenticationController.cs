@@ -7,7 +7,9 @@ using DyadApp.API.Models;
 using DyadApp.API.Services;
 using DyadApp.API.ViewModels;
 using DyadApp.Emails;
+using DyadApp.Emails.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Extensions.Configuration;
 
 namespace DyadApp.API.Controllers
@@ -22,7 +24,8 @@ namespace DyadApp.API.Controllers
         private readonly IConfiguration _configuration;
         private readonly IEmailService _emailService;
         private readonly ILoggingService _loggingService;
-        public AuthenticationController(IAuthenticationService authenticationService, IEmailService emailService, IAuthenticationRepository authenticationRepository, IUserRepository userRepository, ILoggingService loggingService, IConfiguration configuration)
+        private readonly IEmailHandler _emailHandler;
+        public AuthenticationController(IAuthenticationService authenticationService, IEmailService emailService, IAuthenticationRepository authenticationRepository, IUserRepository userRepository, ILoggingService loggingService, IConfiguration configuration, IEmailHandler emailHandler)
         {
             _authenticationService = authenticationService;
             _emailService = emailService;
@@ -30,6 +33,7 @@ namespace DyadApp.API.Controllers
             _userRepository = userRepository;
             _loggingService = loggingService;
             _configuration = configuration;
+            _emailHandler = emailHandler;
         }
 
         [HttpPost]
@@ -153,7 +157,9 @@ namespace DyadApp.API.Controllers
                 Token = token
             };
 
-            return await _emailService.SendEmail(resetPasswordRequest, EmailTypeEnum.PasswordRecovery);
+            await _emailService.SendEmail(new EmailData(token, model.Email, EmailTypeEnum.PasswordRecovery));
+            return Ok();
+            //return await _emailService.SendEmail(resetPasswordRequest, EmailTypeEnum.PasswordRecovery);
         }
 
         [HttpPost("UpdatePassword")]

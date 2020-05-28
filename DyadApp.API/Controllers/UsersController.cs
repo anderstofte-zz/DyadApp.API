@@ -9,6 +9,7 @@ using DyadApp.API.Models;
 using DyadApp.API.Services;
 using DyadApp.API.ViewModels;
 using DyadApp.Emails;
+using DyadApp.Emails.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.JsonPatch;
@@ -87,8 +88,9 @@ namespace DyadApp.API.Controllers
             });
 
             await _repository.CreateAsync(user);
-
-            return await _emailService.SendEmail(user, EmailTypeEnum.Verification);
+            await _emailService.SendEmail(new EmailData(signupToken, model.Email, EmailTypeEnum.Verification));
+            
+            return Ok();
         }
 
         [HttpPatch]
