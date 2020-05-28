@@ -1,15 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Net.Mime;
+using System.Linq;
 using System.Threading.Tasks;
+using DyadApp.API.Converters;
 using DyadApp.API.Data.Repositories;
 using DyadApp.API.Extensions;
+using DyadApp.API.Helpers;
 using DyadApp.API.Models;
 using DyadApp.API.Services;
+using DyadApp.Emails.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
-using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace DyadApp.API.Controllers
 {
@@ -20,12 +23,17 @@ namespace DyadApp.API.Controllers
     {
         private readonly IUserRepository _userRepository;
         private readonly ILoggingService _loggingService;
+        private readonly IEmailService _emailService;
         private readonly IMatchRepository _matchRepository;
-        public AccountController(IUserRepository userRepository, ILoggingService loggingService, IMatchRepository matchRepository)
+        private readonly IConfiguration _configuration;
+
+        public AccountController(IUserRepository userRepository, ILoggingService loggingService, IEmailService emailService, IMatchRepository matchRepository, IConfiguration configuration)
         {
             _userRepository = userRepository;
             _loggingService = loggingService;
+            _emailService = emailService;
             _matchRepository = matchRepository;
+            _configuration = configuration;
         }
 
         [HttpPost("Status")]
@@ -50,24 +58,22 @@ namespace DyadApp.API.Controllers
         public async Task<IActionResult> DataGeneratedByUser()
         {
             var userId = User.GetUserId();
-            var user = await  _userRepository.GetUserById(userId);
+            var user = await _userRepository.GetUserById(userId);
             var matches = await _matchRepository.GetMatches(userId);
 
-            var model = new Something
+            var encryptionKey = _configuration.GetEncryptionKey();
+            var model = user.ToUserDataModel(matches, encryptionKey);
+            var jsonString = JsonConvert.SerializeObject(model);
+            
+            var userData = new EmailData
             {
-                User = user,
-                Matches = matches
+                Email = user.Email,
+                UserData = jsonString,
+                Type = EmailTypeEnum.DataInsight
             };
 
-            var jsonString = JsonSerializer.Serialize(model);
-            var bytes = System.Text.Encoding.UTF8.GetBytes(jsonString);
-            return File(bytes, MediaTypeNames.Application.Json, "file.json");
+            await _emailService.SendEmail(userData);
+            return Ok();
         }
-    }
-
-    public class Something
-    {
-        public User User { get; set; }
-        public List<Match> Matches { get; set; }
     }
 }
