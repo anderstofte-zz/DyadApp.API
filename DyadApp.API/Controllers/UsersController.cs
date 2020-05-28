@@ -165,9 +165,9 @@ namespace DyadApp.API.Controllers
                 return BadRequest("Den angivede adgangskode er forkert.");
             }
 
-            var newPasswordHashed = PasswordHelper.GenerateHashedPassword(model.NewPassword);
-            user.Password = newPasswordHashed.Password;
-            user.Salt = newPasswordHashed.Salt;
+            var encryptionModel = EncryptionHelper.EncryptWithSalt(model.NewPassword);
+            user.Password = encryptionModel.Text;
+            user.Salt = encryptionModel.Salt;
 
             await _userRepository.SaveChangesAsync();
 

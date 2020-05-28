@@ -8,6 +8,7 @@ using DyadApp.API.Services;
 using DyadApp.API.ViewModels;
 using DyadApp.Emails;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 
 namespace DyadApp.API.Controllers
 {
@@ -18,17 +19,17 @@ namespace DyadApp.API.Controllers
         private readonly IAuthenticationRepository _authenticationRepository;
         private readonly IUserRepository _userRepository;
         private readonly IAuthenticationService _authenticationService;
-        private readonly ISecretKeyService _keyService;
+        private readonly IConfiguration _configuration;
         private readonly IEmailService _emailService;
         private readonly ILoggingService _loggingService;
-        public AuthenticationController(IAuthenticationService authenticationService, ISecretKeyService keyService, IEmailService emailService, IAuthenticationRepository authenticationRepository, IUserRepository userRepository, ILoggingService loggingService)
+        public AuthenticationController(IAuthenticationService authenticationService, IEmailService emailService, IAuthenticationRepository authenticationRepository, IUserRepository userRepository, ILoggingService loggingService, IConfiguration configuration)
         {
             _authenticationService = authenticationService;
-            _keyService = keyService;
             _emailService = emailService;
             _authenticationRepository = authenticationRepository;
             _userRepository = userRepository;
             _loggingService = loggingService;
+            _configuration = configuration;
         }
 
         [HttpPost]
@@ -92,7 +93,7 @@ namespace DyadApp.API.Controllers
             int userId;
             try
             {
-                userId = authenticationTokens.GetUserIdFromClaims(_keyService.GetSecretKey());
+                userId = authenticationTokens.GetUserIdFromClaims(_configuration.GetSecretKey());
             }
             catch (Exception)
             {
@@ -177,9 +178,9 @@ namespace DyadApp.API.Controllers
                 return BadRequest("Din forespørgsel er udløbet. Foretag en ny.");
             }
 
-            var hashedPassword = PasswordHelper.GenerateHashedPassword(model.NewPassword);
-            user.Password = hashedPassword.Password;
-            user.Salt = hashedPassword.Salt;
+            var encryptionModel = EncryptionHelper.EncryptWithSalt(model.NewPassword);
+            user.Password = encryptionModel.Text;
+            user.Salt = encryptionModel.Salt;
 
             await _loggingService.SaveAuditLog($"Updating user with user id {user.UserId}.", AuditActionEnum.Update);
             await _userRepository.UpdateAsync(user);

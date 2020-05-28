@@ -8,6 +8,7 @@ using DyadApp.API.Extensions;
 using DyadApp.API.Helpers;
 using DyadApp.API.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 
 namespace DyadApp.API.Services
@@ -15,12 +16,12 @@ namespace DyadApp.API.Services
     public class AuthenticationService : IAuthenticationService
     {
         private readonly IAuthenticationRepository _authenticationRepository;
-        private readonly ISecretKeyService _keyService;
+        private readonly IConfiguration _configuration;
 
-        public AuthenticationService(ISecretKeyService keyService, IAuthenticationRepository authenticationRepository)
+        public AuthenticationService(IAuthenticationRepository authenticationRepository, IConfiguration configuration)
         {
-            _keyService = keyService;
             _authenticationRepository = authenticationRepository;
+            _configuration = configuration;
         }
 
         public async Task<IActionResult> Authenticate(string email, string password)
@@ -60,7 +61,7 @@ namespace DyadApp.API.Services
 
         private SecurityTokenDescriptor SetUpToken(int userId)
         {
-            var key = Encoding.ASCII.GetBytes(_keyService.GetSecretKey());
+            var key = Encoding.ASCII.GetBytes(_configuration.GetSecretKey());
             return new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(new Claim[]

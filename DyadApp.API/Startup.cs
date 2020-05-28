@@ -117,7 +117,6 @@ namespace DyadApp.API
             services.AddTransient<SmtpClient>();
 
             services.AddTransient<IEmailService, EmailService>();
-            services.AddTransient<ISecretKeyService, SecretKeyService>();
 
             services.AddTransient<IMatchService, MatchService>();
             services.AddTransient<IChatService, ChatService>();
