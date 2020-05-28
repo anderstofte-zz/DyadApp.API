@@ -7,6 +7,8 @@ namespace DyadApp.API.Services
     public interface IAuthenticationService
     {
         Task<IActionResult> Authenticate(string email, string password);
+        Task<Signup> GetSignup(string token);
+        Task<IActionResult> VerifySignup(Signup signup);
         Task<AuthenticationTokens> GenerateTokens(int userId);
     }
 }

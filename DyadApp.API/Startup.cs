@@ -123,13 +123,13 @@ namespace DyadApp.API
 
             services.AddTransient<IMatchService, MatchService>();
             services.AddTransient<IChatService, ChatService>();
+            services.AddTransient<IUserService, UserService>();
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IChatRepository, ChatRepository>();
             services.AddScoped<IMatchRepository, MatchRepository>();
             services.AddScoped<IAuthenticationRepository, AuthenticationRepository>();
-
             services.AddSignalR()
                 .AddHubOptions<ChatHub>(options => options.EnableDetailedErrors = true);
 

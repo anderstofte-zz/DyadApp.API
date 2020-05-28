@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading.Tasks;
 using DyadApp.API.Converters;
 using DyadApp.API.Data.Repositories;
@@ -22,15 +21,16 @@ namespace DyadApp.API.Controllers
     public class UsersController : ControllerBase
     {
         private readonly IEmailService _emailService;
-        private readonly IUserRepository _repository;
         private readonly IUserRepository _userRepository;
         private readonly ILoggingService _loggingService;
-        public UsersController(IEmailService emailService, IUserRepository repository, IUserRepository userRepository, ILoggingService loggingService)
+        private readonly IUserService _userService;
+
+        public UsersController(IEmailService emailService, IUserRepository userRepository, ILoggingService loggingService, IUserService userService)
         {
             _emailService = emailService;
-            _repository = repository;
             _userRepository = userRepository;
             _loggingService = loggingService;
+            _userService = userService;
         }
 
         [HttpGet]
@@ -52,11 +52,16 @@ namespace DyadApp.API.Controllers
 
         [AllowAnonymous]
         [HttpPost("VerifyCredentials")]
-        public IActionResult VerifySignupCredentials(SignupCredentialsModel model)
+        public async Task<IActionResult> VerifySignupCredentials(SignupCredentialsModel model)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState.FirstError());
+            }
+
+            if (await UserWithProvidedEmailAlreadyExists(model.Email))
+            {
+                return BadRequest("En bruger med den indtastede email findes allerede.");
             }
 
             return Ok();
@@ -76,18 +81,8 @@ namespace DyadApp.API.Controllers
             {
                 return BadRequest("En bruger med den indtastede email findes allerede.");
             }
-
-            var user = model.ToUser();
-
             var signupToken = TokenHelper.GenerateSignupToken();
-            user.Signups.Add(new Signup
-            {
-                Token = signupToken,
-                ExpirationDate = DateTime.Now.AddDays(2),
-                AcceptDate = null
-            });
-
-            await _repository.CreateAsync(user);
+            await _userService.CreateUser(model, signupToken);
             await _emailService.SendEmail(new EmailData(signupToken, model.Email, EmailTypeEnum.Verification));
             
             return Ok();
@@ -122,7 +117,7 @@ namespace DyadApp.API.Controllers
 
             if (patchDoc.Operations.Any(x => x.path == "/email"))
             {
-                var existingUserWithSubmittedEmail = await _userRepository.GetByEmail(user.Email);
+                var existingUserWithSubmittedEmail = await _userRepository.GetUserByEmail(user.Email);
                 if (existingUserWithSubmittedEmail != null)
                 {
                     return BadRequest("Den angivede email er tilknyttet en eksisterende bruger.");
@@ -132,15 +127,6 @@ namespace DyadApp.API.Controllers
             await _userRepository.SaveChangesAsync();
 
             return Ok();
-        }
-
-        [AllowAnonymous]
-        [HttpPost("IsEmailInUse")]
-        public async Task<IActionResult> CheckIfEmailIsInUse([FromBody] string email)
-        {
-            var isEmailInUse = await UserWithProvidedEmailAlreadyExists(email);
-
-            return !isEmailInUse ? (IActionResult) Ok() : BadRequest();
         }
 
         [HttpPost("ChangePassword")]
@@ -178,7 +164,8 @@ namespace DyadApp.API.Controllers
         }
         private async Task<bool> UserWithProvidedEmailAlreadyExists(string email)
         {
-            return await _repository.DoesUserExists(email);
+            var user = await _userRepository.GetUserByEmail(email);
+            return user == null;
         }
     }
 }

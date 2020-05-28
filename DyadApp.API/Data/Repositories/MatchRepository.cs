@@ -49,7 +49,7 @@ namespace DyadApp.API.Data.Repositories
                 .Include(x => x.UserMatches)
                 .ThenInclude(um => um.User)
                 .Include(x => x.ChatMessages)
-                .Where(x => x.UserMatches.Any(z => z.UserId == userId))
+                .Where(x => x.UserMatches.Any(userMatch => userMatch.UserId == userId))
                 .ToListAsync();
         }
     }
