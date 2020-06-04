@@ -36,13 +36,13 @@ namespace DyadApp.API.Services
 
         public async Task<MatchConversationModel> FetchChatMessages(int matchId, int userId)
         {
-            var match = await _chatRepository.FetchChatMessages(matchId);
+            var match = await _chatRepository.RetrieveChatMessages(matchId);
             return match.ToChatMessageModels(userId);
         }
 
         public async Task MarkMessagesAsRead(int matchId, int userId)
         {
-            var match = await _chatRepository.FetchMatch(matchId);
+            var match = await _chatRepository.RetrieveMatch(matchId);
 
             var chatMessages = match.ChatMessages.Where(x => x.ReceiverId == userId).Select(x =>
             {

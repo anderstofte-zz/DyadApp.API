@@ -51,7 +51,7 @@ namespace DyadApp.API.Services
                 return null;
             }
 
-            var signupIsExpired = signup.ExpirationDate > DateTime.Now;
+            var signupIsExpired = signup.ExpirationDate < DateTime.Now;
             var signupAlreadyAccepted = signup.AcceptDate != null;
             if (signupIsExpired || signupAlreadyAccepted)
             {

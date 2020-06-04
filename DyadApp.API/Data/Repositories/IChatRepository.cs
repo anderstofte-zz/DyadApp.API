@@ -7,8 +7,8 @@ namespace DyadApp.API.Data.Repositories
     public interface IChatRepository
     {
         Task AddMessage(ChatMessage model);
-        Task<Match> FetchChatMessages(int matchId);
+        Task<Match> RetrieveChatMessages(int matchId);
         Task UpdateChatMessages(List<ChatMessage> chatMessages);
-        Task<Match> FetchMatch(int matchId);
+        Task<Match> RetrieveMatch(int matchId);
     }
 }

@@ -1,7 +1,6 @@
 ﻿using DyadApp.Emails.Models;
 using HandlebarsDotNet;
 using MimeKit;
-using Newtonsoft.Json;
 
 namespace DyadApp.Emails
 {

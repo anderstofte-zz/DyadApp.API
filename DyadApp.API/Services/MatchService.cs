@@ -31,39 +31,33 @@ namespace DyadApp.API.Services
 
 			var awaitingMatch = new AwaitingMatch { UserId = userId };
             await _matchRepository.AddAwaitingMatch(awaitingMatch);
-
 			return true;
 		}
 
         private async Task<bool> UserIsAlreadyAwaitingAMatch(int userId)
         {
-            var awaitingMatch = await _matchRepository.GetAwaitingMatchByUserId(userId);
-            return awaitingMatch != null; 
+            var awaitingMatches = await _matchRepository.RetrieveAwaitingMatches();
+            return awaitingMatches.Any(x => x.UserId == userId && x.IsMatched == false);
         }
 
         public async Task <bool> SearchForMatch(int userId)
 		{
 			var userToMatch = await _userRepository.GetUserById(userId);
-
             var awaitingMatch = await GetAwaitingMatchToMatchWithUser(userToMatch);
             if (awaitingMatch == null)
             {
                 return false;
             }
 
+            var isUserToMatchAndAwaitingMatchAlreadyMatched = await IsMatchUnique(userId, awaitingMatch.UserId);
+            if (isUserToMatchAndAwaitingMatchAlreadyMatched)
+            {
+                return false;
+            }
+
             awaitingMatch.IsMatched = true;
 
-            var userMatches = new List<UserMatch>
-            {
-                new UserMatch
-                {
-                    UserId = userToMatch.UserId,
-                },
-                new UserMatch
-                {
-                    UserId = awaitingMatch.UserId
-                }
-            };
+            var userMatches = CreateUserMatches(userToMatch, awaitingMatch);
 
             var match = new Match
             {
@@ -77,7 +71,7 @@ namespace DyadApp.API.Services
 
         private async Task<AwaitingMatch> GetAwaitingMatchToMatchWithUser(User userToMatch)
         {
-            var awaitingMatches = await _matchRepository.GetAwaitingMatches();
+            var awaitingMatches = await _matchRepository.RetrieveAwaitingMatches();
             if (awaitingMatches == null)
             {
                 return null;
@@ -90,9 +84,37 @@ namespace DyadApp.API.Services
             return filteredAndSortedAwaitingMatches?.FirstOrDefault();
         }
 
-        public async Task<List<MatchViewModel>> FetchMatches(int userId)
+        private async Task<bool> IsMatchUnique(int userId, int awaitingMatchUserId)
         {
-            var matches = await _matchRepository.GetMatches(userId);
+            var userMatches = await _matchRepository.RetrieveUserMatches();
+            if (userMatches == null)
+            {
+                return false;
+            }
+
+            var filteredUserMatches = userMatches.Where(x => x.UserId == userId || x.UserId == awaitingMatchUserId).ToList();
+            var usersAreAlreadyMatched = filteredUserMatches.GroupBy(x => x.MatchId).Any(x => x.Count() == 2);
+            return usersAreAlreadyMatched;
+        }
+
+        private static List<UserMatch> CreateUserMatches(User userToMatch, AwaitingMatch awaitingMatch)
+        {
+            return new List<UserMatch>
+            {
+                new UserMatch
+                {
+                    UserId = userToMatch.UserId,
+                },
+                new UserMatch
+                {
+                    UserId = awaitingMatch.UserId
+                }
+            };
+        }
+
+        public async Task<List<MatchViewModel>> RetrieveMatches(int userId)
+        {
+            var matches = await _matchRepository.RetrieveMatches(userId);
             var encryptionKey = _configuration.GetEncryptionKey();
             return matches.ToMatchViewToModel(userId, encryptionKey);
         }

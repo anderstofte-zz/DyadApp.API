@@ -57,7 +57,7 @@ namespace DyadApp.Tests
         //    };
 
         //    var mockRepo = new Mock<IChatRepository>();
-        //    mockRepo.Setup(repo => repo.FetchChatMessages(1)).ReturnsAsync(match);
+        //    mockRepo.Setup(repo => repo.RetrieveChatMessages(1)).ReturnsAsync(match);
             
 
         //    var receiverId = 1;

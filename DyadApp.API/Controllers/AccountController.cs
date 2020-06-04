@@ -59,7 +59,7 @@ namespace DyadApp.API.Controllers
         {
             var userId = User.GetUserId();
             var user = await _userRepository.GetUserById(userId);
-            var matches = await _matchRepository.GetMatches(userId);
+            var matches = await _matchRepository.RetrieveMatches(userId);
 
             var encryptionKey = _configuration.GetEncryptionKey();
             var model = user.ToUserDataModel(matches, encryptionKey);

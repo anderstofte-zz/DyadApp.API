@@ -21,7 +21,7 @@ namespace DyadApp.API.Data.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task<Match> FetchChatMessages(int matchId)
+        public async Task<Match> RetrieveChatMessages(int matchId)
         {
             return await _context.Matches
                 .Include(x => x.ChatMessages)
@@ -37,7 +37,7 @@ namespace DyadApp.API.Data.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public Task<Match> FetchMatch(int matchId)
+        public Task<Match> RetrieveMatch(int matchId)
         {
             return _context.Matches.Include(x => x.ChatMessages).Where(x => x.MatchId == matchId)
                 .SingleOrDefaultAsync();
