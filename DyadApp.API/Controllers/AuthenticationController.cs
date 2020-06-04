@@ -86,7 +86,7 @@ namespace DyadApp.API.Controllers
                 return BadRequest("Access token is invalid.");
             }
 
-            var refreshToken = await GetRefreshToken(authenticationTokens.RefreshToken, userId);
+            var refreshToken = await RetrieveRefreshToken(authenticationTokens.RefreshToken, userId);
             if (refreshToken == null)
             {
                 return BadRequest("Refresh token is invalid.");
@@ -101,7 +101,7 @@ namespace DyadApp.API.Controllers
             return Ok(newTokens);
         }
 
-        private async Task<RefreshToken> GetRefreshToken(string refreshToken, int userId)
+        private async Task<RefreshToken> RetrieveRefreshToken(string refreshToken, int userId)
         {
             await _loggingService.SaveAuditLog($"Reading refresh token for user with id {userId}",
                 AuditActionEnum.Read);

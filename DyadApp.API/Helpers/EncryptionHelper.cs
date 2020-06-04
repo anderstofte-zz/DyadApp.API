@@ -56,9 +56,7 @@ namespace DyadApp.API.Helpers
                 provider.GetBytes(salt);
 
             var hashedPasswordAndSalt = new Rfc2898DeriveBytes(clearText, salt, 10000);
-
             var hash = hashedPasswordAndSalt.GetBytes(20);
-
             var hashBytes = new byte[36];
 
             Array.Copy(salt, 0, hashBytes, 0, 16);

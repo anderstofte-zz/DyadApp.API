@@ -33,17 +33,22 @@ namespace DyadApp.API.Data.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task<AwaitingMatch> GetAwaitingMatchByUserId(int userId)
+        public async Task<AwaitingMatch> RetrieveAwaitingMatchByUserId(int userId)
         {
             return await _context.AwaitingMatches.SingleOrDefaultAsync(x => x.UserId == userId);
         }
 
-        public async Task<List<AwaitingMatch>> GetAwaitingMatches()
+        public async Task<List<AwaitingMatch>> RetrieveAwaitingMatches()
         {
             return await _context.AwaitingMatches.Where(x => !x.IsMatched).Include(x => x.User).ToListAsync();
         }
 
-        public async Task<List<Match>> GetMatches(int userId)
+        public async Task<List<UserMatch>> RetrieveUserMatches()
+        {
+            return await _context.UserMatches.ToListAsync();
+        }
+
+        public async Task<List<Match>> RetrieveMatches(int userId)
         {
             return await _context.Matches
                 .Include(x => x.UserMatches)

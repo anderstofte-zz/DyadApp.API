@@ -54,14 +54,14 @@ namespace DyadApp.API.Controllers
             return Ok("Vi fandt et nyt match!");
         }
 
-        [HttpGet("FetchMatches")]
-        public async Task<List<MatchViewModel>> FetchMatches()
+        [HttpGet]
+        public async Task<List<MatchViewModel>> RetrieveMatches()
         {
             var userId = User.GetUserId();
             await _loggingService.SaveAuditLog($"Retrieving matches for user with user id {userId}",
                 AuditActionEnum.Read);
 
-            return await _matchService.FetchMatches(userId);
+            return await _matchService.RetrieveMatches(userId);
         }
     }
 }

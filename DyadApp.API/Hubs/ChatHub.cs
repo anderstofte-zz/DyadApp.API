@@ -26,7 +26,6 @@ namespace DyadApp.API.Hubs
         public async Task SendMessage(NewChatMessageModel model)
         {
             var userId = Context.User.GetUserId();
-            
             await _chatService.AddMessage(model);
 
             var newChatMessage = new ChatMessageModel

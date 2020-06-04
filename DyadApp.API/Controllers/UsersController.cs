@@ -59,7 +59,7 @@ namespace DyadApp.API.Controllers
                 return BadRequest(ModelState.FirstError());
             }
 
-            if (await UserWithProvidedEmailAlreadyExists(model.Email))
+            if (!await IsEmailUnique(model.Email))
             {
                 return BadRequest("En bruger med den indtastede email findes allerede.");
             }
@@ -77,7 +77,7 @@ namespace DyadApp.API.Controllers
                 return BadRequest(ModelState.FirstError());
             }
 
-            if (await UserWithProvidedEmailAlreadyExists(model.Email))
+            if (!await IsEmailUnique(model.Email))
             {
                 return BadRequest("En bruger med den indtastede email findes allerede.");
             }
@@ -162,7 +162,7 @@ namespace DyadApp.API.Controllers
             return Ok();
 
         }
-        private async Task<bool> UserWithProvidedEmailAlreadyExists(string email)
+        private async Task<bool> IsEmailUnique(string email)
         {
             var user = await _userRepository.GetUserByEmail(email);
             return user == null;

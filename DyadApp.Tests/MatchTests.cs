@@ -45,7 +45,7 @@ namespace DyadApp.Tests
             var mockMatchRepo = new Mock<IMatchRepository>();
             var mockUserRepo = new Mock<IUserRepository>();
             var mockConfiguration = new Mock<IConfiguration>();
-            mockMatchRepo.Setup(repo => repo.GetAwaitingMatchByUserId(userId))
+            mockMatchRepo.Setup(repo => repo.RetrieveAwaitingMatchByUserId(userId))
                 .ReturnsAsync(awaitingMatches.SingleOrDefault(x => x.UserId == userId ));
 
             mockMatchRepo.Setup(repo => repo.AddAwaitingMatch(It.IsAny<AwaitingMatch>()))
