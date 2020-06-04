@@ -80,7 +80,7 @@ namespace DyadApp.API.Services
             var awaitingMatches = await _matchRepository.GetAwaitingMatches();
             if (awaitingMatches == null)
             {
-
+                return null;
             }
 
             var filteredAndSortedAwaitingMatches = awaitingMatches.Where(x =>

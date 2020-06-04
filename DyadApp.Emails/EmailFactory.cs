@@ -1,6 +1,7 @@
 ﻿using DyadApp.Emails.Models;
 using HandlebarsDotNet;
 using MimeKit;
+using Newtonsoft.Json;
 
 namespace DyadApp.Emails
 {
@@ -52,6 +53,26 @@ namespace DyadApp.Emails
 
             var builder = new BodyBuilder { HtmlBody = compiledTemplate(data) };
             return builder.ToMessageBody();
+        }
+
+        public static MimeMessage CreateDataInsight(EmailData data)
+        {
+            var message = new MimeMessage();
+            message.From.Add(new MailboxAddress("Dyad support", "support@dyadapp.com"));
+            message.To.Add(new MailboxAddress(data.Email));
+            message.Subject = "Ny adgangskode";
+
+            var template = System.IO.File.ReadAllText("wwwroot\\EmailTemplates\\DataInsight.html");
+
+            var compiledTemplate = Handlebars.Compile(template);
+
+            var builder = new BodyBuilder { HtmlBody = compiledTemplate(data) };
+
+            builder.Attachments.Add("user-data.json", System.Text.Encoding.UTF8.GetBytes(data.UserData), new ContentType("application", "json"));
+
+            message.Body = builder.ToMessageBody();
+
+            return message;
         }
     }
 }

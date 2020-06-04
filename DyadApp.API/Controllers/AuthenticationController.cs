@@ -9,7 +9,6 @@ using DyadApp.API.ViewModels;
 using DyadApp.Emails;
 using DyadApp.Emails.Models;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Extensions.Configuration;
 
 namespace DyadApp.API.Controllers
@@ -24,8 +23,7 @@ namespace DyadApp.API.Controllers
         private readonly IConfiguration _configuration;
         private readonly IEmailService _emailService;
         private readonly ILoggingService _loggingService;
-        private readonly IEmailHandler _emailHandler;
-        public AuthenticationController(IAuthenticationService authenticationService, IEmailService emailService, IAuthenticationRepository authenticationRepository, IUserRepository userRepository, ILoggingService loggingService, IConfiguration configuration, IEmailHandler emailHandler)
+        public AuthenticationController(IAuthenticationService authenticationService, IEmailService emailService, IAuthenticationRepository authenticationRepository, IUserRepository userRepository, ILoggingService loggingService, IConfiguration configuration)
         {
             _authenticationService = authenticationService;
             _emailService = emailService;
@@ -33,7 +31,6 @@ namespace DyadApp.API.Controllers
             _userRepository = userRepository;
             _loggingService = loggingService;
             _configuration = configuration;
-            _emailHandler = emailHandler;
         }
 
         [HttpPost]
@@ -45,8 +42,8 @@ namespace DyadApp.API.Controllers
             {
                 return BadRequest(ModelState.FirstError());
             }
-            
-            var user = await _authenticationRepository.GetUserCredentialsByEmail(model.Email);
+
+            var user = await _authenticationRepository.GetUserByEmail(model.Email);
             if (user == null || !user.ValidatePassword(model.Password))
             {
                 return BadRequest("Der findes ingen brugere med de indtastede oplysninger.");
@@ -65,28 +62,13 @@ namespace DyadApp.API.Controllers
         public async Task<IActionResult> VerifyUser([FromBody] SignupTokenModel model)
         {
             await _loggingService.SaveAuditLog($"Verifying sign up token: {model.Token}.", AuditActionEnum.Signup);
-            var signup = await _authenticationRepository.GetSignupByToken(model.Token);
-
+            var signup = await _authenticationService.GetSignup(model.Token);
             if (signup == null)
             {
                 return BadRequest("Signup token is invalid.");
             }
 
-            var user = await _userRepository.GetUserById(signup.UserId);
-
-            signup.AcceptDate = DateTime.Now;
-            user.Verified = true;
-
-            try
-            {
-                await _userRepository.SaveChangesAsync();
-                await _authenticationRepository.SaveChangesAsync();
-                return Ok();
-            }
-            catch (Exception)
-            {
-                return BadRequest();
-            }
+            return await _authenticationService.VerifySignup(signup);
         }
 
         [HttpPost("Refresh")]
@@ -114,7 +96,7 @@ namespace DyadApp.API.Controllers
 
             await _loggingService.SaveAuditLog($"Deleting old refresh token for user with user id {userId}",
                 AuditActionEnum.Delete);
-            await _authenticationRepository.DeleteTokenAsync(refreshToken);
+            await _authenticationRepository.DeleteToken(refreshToken);
 
             return Ok(newTokens);
         }
@@ -131,7 +113,7 @@ namespace DyadApp.API.Controllers
         {
             await _loggingService.SaveAuditLog($"Retrieving user with email {model.Email}", AuditActionEnum.Read);
 
-            var user = await _userRepository.GetByEmail(model.Email);
+            var user = await _userRepository.GetUserByEmail(model.Email);
 
             if (user == null)
             {
@@ -149,17 +131,10 @@ namespace DyadApp.API.Controllers
 
             await _loggingService.SaveAuditLog($"Creating reset-password token for user with user id {user.UserId}",
                 AuditActionEnum.Create);
-            await _authenticationRepository.CreateTokenAsync(resetPasswordToken);
-
-            var resetPasswordRequest = new ResetPasswordRequest
-            {
-                Email = model.Email,
-                Token = token
-            };
-
+            await _authenticationRepository.CreateToken(resetPasswordToken);
             await _emailService.SendEmail(new EmailData(token, model.Email, EmailTypeEnum.PasswordRecovery));
+
             return Ok();
-            //return await _emailService.SendEmail(resetPasswordRequest, EmailTypeEnum.PasswordRecovery);
         }
 
         [HttpPost("UpdatePassword")]
@@ -172,7 +147,7 @@ namespace DyadApp.API.Controllers
 
             await _loggingService.SaveAuditLog($"Retrieving user with email {model.Email} for updating password.",
                 AuditActionEnum.Read);
-            var user = await _userRepository.GetUserForPasswordUpdate(model.Token, model.Email);
+            var user = await _userRepository.GetUserWithResetTokensByEmail(model.Email);
             if (user == null)
             {
                 return BadRequest("Der findes ingen brugere med den indtastede email.");
@@ -192,7 +167,7 @@ namespace DyadApp.API.Controllers
             await _userRepository.UpdateAsync(user);
             await _loggingService.SaveAuditLog($"Deleting reset token for user with user id {user.UserId}",
                 AuditActionEnum.Delete);
-            await _authenticationRepository.DeleteTokenAsync(resetToken);
+            await _authenticationRepository.DeleteToken(resetToken);
 
             return Ok();
         }
