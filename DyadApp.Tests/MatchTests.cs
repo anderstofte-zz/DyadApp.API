@@ -48,9 +48,6 @@ namespace DyadApp.Tests
             mockMatchRepo.Setup(repo => repo.RetrieveAwaitingMatches())
                 .ReturnsAsync(awaitingMatches.Where(x => x.UserId == userId).ToList());
 
-            //mockMatchRepo.Setup(repo => repo.RetrieveAwaitingMatches())
-            //    .ReturnsAsync(awaitingMatches.SingleOrDefault(x => x.UserId == userId ));
-
             mockMatchRepo.Setup(repo => repo.AddAwaitingMatch(It.IsAny<AwaitingMatch>()))
                 .Callback<AwaitingMatch>(aw =>
                 {
