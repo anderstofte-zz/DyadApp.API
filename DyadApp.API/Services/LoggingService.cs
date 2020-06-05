@@ -4,6 +4,7 @@ using DyadApp.API.Data.Repositories;
 using DyadApp.API.Extensions;
 using DyadApp.API.Models;
 using Microsoft.AspNetCore.Http;
+using Microsoft.OpenApi.Extensions;
 
 namespace DyadApp.API.Services
 {
@@ -22,7 +23,7 @@ namespace DyadApp.API.Services
             var userId = _contextAccessor.HttpContext.GetUserId();
             var auditLog = new AuditLog
             {
-                Action = action,
+                Action = action.GetDisplayName(),
                 Description = description,
                 IpAddress = _contextAccessor.HttpContext.Connection.RemoteIpAddress.ToString(),
                 Created = DateTime.Now,
