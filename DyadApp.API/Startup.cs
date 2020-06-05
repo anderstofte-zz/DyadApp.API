@@ -130,8 +130,7 @@ namespace DyadApp.API
             services.AddScoped<IChatRepository, ChatRepository>();
             services.AddScoped<IMatchRepository, MatchRepository>();
             services.AddScoped<IAuthenticationRepository, AuthenticationRepository>();
-            services.AddSignalR()
-                .AddHubOptions<ChatHub>(options => options.EnableDetailedErrors = true);
+            services.AddSignalR();
 
             services.AddSingleton<IUserIdProvider, NameUserIdProvider>();
 
@@ -161,10 +160,6 @@ namespace DyadApp.API
             app.UseRouting();
 
             app.UseCors(CorsPolicy);
-
-            var websocketOptions = new WebSocketOptions();
-            websocketOptions.AllowedOrigins.Add(Configuration.GetSection("WebAppBaseAddress").Value);
-            app.UseWebSockets(websocketOptions);
 
             app.UseAuthentication();
             app.UseAuthorization();
