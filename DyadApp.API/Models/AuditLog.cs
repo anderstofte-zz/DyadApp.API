@@ -5,7 +5,7 @@ namespace DyadApp.API.Models
 	public class AuditLog
 	{
 		public int AuditLogId { get; set; }
-        public AuditActionEnum Action { get; set; }
+        public string Action { get; set; }
         public string Description { get; set; }
         public string IpAddress { get; set; }
         public DateTime Created { get; set; }
