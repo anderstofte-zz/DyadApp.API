@@ -4,13 +4,16 @@ using System.Threading;
 using System.Threading.Tasks;
 using DyadApp.API.Extensions;
 using DyadApp.API.Models;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
 namespace DyadApp.API.Data
 {
     public class DyadAppContext : DbContext
     {
+        public IHttpContextAccessor HttpContextAccessor { get; }
         public DbSet<User> Users { get; set; }
+        public DbSet<AuditLog> AuditLogs { get; set; }
         public DbSet<UserPassword> UserPasswords { get; set; }
         public DbSet<Signup> Signups { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
@@ -20,8 +23,9 @@ namespace DyadApp.API.Data
         public DbSet<Match> Matches { get; set; }
         public DbSet<UserMatch> UserMatches { get; set; }
         
-        public DyadAppContext(DbContextOptions options) : base(options)
+        public DyadAppContext(DbContextOptions options, IHttpContextAccessor httpContextAccessor) : base(options)
         {
+            this.HttpContextAccessor = httpContextAccessor;
         }
 
         public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default(CancellationToken))
@@ -32,8 +36,8 @@ namespace DyadApp.API.Data
 
         private void PopulateAudit()
         {
-            var userId = ClaimsPrincipal.Current.GetUserId();
-            var now = DateTime.UtcNow;
+            var userId = HttpContextAccessor.HttpContext.GetUserId();
+            var now = DateTime.Now;
             var entries = ChangeTracker.Entries();
             foreach (var entry in entries)
             {

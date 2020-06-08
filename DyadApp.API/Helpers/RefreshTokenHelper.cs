@@ -16,7 +16,7 @@ namespace DyadApp.API.Helpers
             {
                 UserId = userId,
                 Token = Convert.ToBase64String(randomNumber),
-                ExpirationDate = DateTime.UtcNow.AddDays(31)
+                ExpirationDate = DateTime.Now.AddDays(31)
             };
 
             return refreshToken;

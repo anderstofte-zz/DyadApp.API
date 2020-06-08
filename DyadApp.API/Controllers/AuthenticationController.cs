@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Linq;
 using System.Threading.Tasks;
-using DyadApp.API.Data;
 using DyadApp.API.Data.Repositories;
 using DyadApp.API.Extensions;
 using DyadApp.API.Helpers;
@@ -9,8 +7,9 @@ using DyadApp.API.Models;
 using DyadApp.API.Services;
 using DyadApp.API.ViewModels;
 using DyadApp.Emails;
+using DyadApp.Emails.Models;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace DyadApp.API.Controllers
 {
@@ -21,28 +20,30 @@ namespace DyadApp.API.Controllers
         private readonly IAuthenticationRepository _authenticationRepository;
         private readonly IUserRepository _userRepository;
         private readonly IAuthenticationService _authenticationService;
-        private readonly ISecretKeyService _keyService;
+        private readonly IConfiguration _configuration;
         private readonly IEmailService _emailService;
-        private readonly DyadAppContext _context;
-        public AuthenticationController(IAuthenticationService authenticationService, ISecretKeyService keyService, IEmailService emailService, IAuthenticationRepository authenticationRepository, IUserRepository userRepository, DyadAppContext context)
+        private readonly ILoggingService _loggingService;
+        public AuthenticationController(IAuthenticationService authenticationService, IEmailService emailService, IAuthenticationRepository authenticationRepository, IUserRepository userRepository, ILoggingService loggingService, IConfiguration configuration)
         {
             _authenticationService = authenticationService;
-            _keyService = keyService;
             _emailService = emailService;
             _authenticationRepository = authenticationRepository;
             _userRepository = userRepository;
-            _context = context;
+            _loggingService = loggingService;
+            _configuration = configuration;
         }
 
         [HttpPost]
         public async Task<IActionResult> AuthenticateUser([FromBody] AuthenticationUserModel model)
         {
+            await _loggingService.SaveAuditLog("Login process initiated", AuditActionEnum.Login);
+
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState.FirstError());
             }
-            
-            var user = await _authenticationRepository.GetUserCredentialsByEmail(model.Email);
+
+            var user = await _authenticationRepository.GetUserByEmail(model.Email);
             if (user == null || !user.ValidatePassword(model.Password))
             {
                 return BadRequest("Der findes ingen brugere med de indtastede oplysninger.");
@@ -60,64 +61,59 @@ namespace DyadApp.API.Controllers
         [HttpPost("VerifySignupToken")]
         public async Task<IActionResult> VerifyUser([FromBody] SignupTokenModel model)
         {
-            var signup = await _authenticationRepository.GetSignupByToken(model.Token);
-
+            await _loggingService.SaveAuditLog($"Verifying sign up token: {model.Token}.", AuditActionEnum.Signup);
+            var signup = await _authenticationService.GetSignup(model.Token);
             if (signup == null)
             {
                 return BadRequest("Signup token is invalid.");
             }
 
-            var user = await _userRepository.GetUserById(signup.UserId);
-
-            signup.AcceptDate = DateTime.UtcNow;
-            user.Verified = true;
-
-            try
-            {
-                await _userRepository.SaveChangesAsync();
-                await _authenticationRepository.SaveChangesAsync();
-                return Ok();
-            }
-            catch (Exception)
-            {
-                return BadRequest();
-            }
+            return await _authenticationService.VerifySignup(signup);
         }
 
         [HttpPost("Refresh")]
         public async Task<IActionResult> RefreshTokens([FromBody]AuthenticationTokens authenticationTokens)
         {
+            await _loggingService.SaveAuditLog($"Refreshing tokens for user with user id {User.GetUserId()}",
+                AuditActionEnum.TokenRefresh);
             int userId;
             try
             {
-                userId = authenticationTokens.GetUserIdFromClaims(_keyService.GetSecretKey());
+                userId = authenticationTokens.GetUserIdFromClaims(_configuration.GetSecretKey());
             }
             catch (Exception)
             {
                 return BadRequest("Access token is invalid.");
             }
 
-            var refreshToken = await GetRefreshToken(authenticationTokens.RefreshToken, userId);
+            var refreshToken = await RetrieveRefreshToken(authenticationTokens.RefreshToken, userId);
             if (refreshToken == null)
             {
                 return BadRequest("Refresh token is invalid.");
             }
 
             var newTokens = await _authenticationService.GenerateTokens(userId);
-            await _authenticationRepository.DeleteTokenAsync(refreshToken);
+
+            await _loggingService.SaveAuditLog($"Deleting old refresh token for user with user id {userId}",
+                AuditActionEnum.Delete);
+            await _authenticationRepository.DeleteToken(refreshToken);
 
             return Ok(newTokens);
         }
 
-        private async Task<RefreshToken> GetRefreshToken(string refreshToken, int userId)
+        private async Task<RefreshToken> RetrieveRefreshToken(string refreshToken, int userId)
         {
+            await _loggingService.SaveAuditLog($"Reading refresh token for user with id {userId}",
+                AuditActionEnum.Read);
             return await _authenticationRepository.GetRefreshToken(userId, refreshToken);
         }
 
         [HttpPost("ResetPassword")]
         public async Task<IActionResult> ResetPassword(ResetPasswordRequestModel model)
         {
-            var user = await _userRepository.GetByEmail(model.Email);
+            await _loggingService.SaveAuditLog($"Retrieving user with email {model.Email}", AuditActionEnum.Read);
+
+            var user = await _userRepository.GetUserByEmail(model.Email);
 
             if (user == null)
             {
@@ -129,19 +125,16 @@ namespace DyadApp.API.Controllers
             var resetPasswordToken = new ResetPasswordToken
             {
                 Token = token,
-                ExpirationDate = DateTime.UtcNow.AddMinutes(30),
+                ExpirationDate = DateTime.Now.AddMinutes(30),
                 UserId = user.UserId
             };
 
-            await _authenticationRepository.CreateTokenAsync(resetPasswordToken);
+            await _loggingService.SaveAuditLog($"Creating reset-password token for user with user id {user.UserId}",
+                AuditActionEnum.Create);
+            await _authenticationRepository.CreateToken(resetPasswordToken);
+            await _emailService.SendEmail(new EmailData(token, model.Email, EmailTypeEnum.PasswordRecovery));
 
-            var resetPasswordRequest = new ResetPasswordRequest
-            {
-                Email = model.Email,
-                Token = token
-            };
-
-            return await _emailService.SendEmail(resetPasswordRequest, EmailTypeEnum.PasswordRecovery);
+            return Ok();
         }
 
         [HttpPost("UpdatePassword")]
@@ -152,7 +145,9 @@ namespace DyadApp.API.Controllers
                 return BadRequest(ModelState.FirstError());
             }
 
-            var user = await _userRepository.GetUserForPasswordUpdate(model.Token, model.Email);
+            await _loggingService.SaveAuditLog($"Retrieving user with email {model.Email} for updating password.",
+                AuditActionEnum.Read);
+            var user = await _userRepository.GetUserWithResetTokensByEmail(model.Email);
             if (user == null)
             {
                 return BadRequest("Der findes ingen brugere med den indtastede email.");
@@ -164,13 +159,15 @@ namespace DyadApp.API.Controllers
                 return BadRequest("Din forespørgsel er udløbet. Foretag en ny.");
             }
 
-            var hashedPassword = PasswordHelper.GenerateHashedPassword(model.NewPassword);
-            user.Password = hashedPassword.Password;
-            user.Salt = hashedPassword.Salt;
+            var encryptionModel = EncryptionHelper.EncryptWithSalt(model.NewPassword);
+            user.Password = encryptionModel.Text;
+            user.Salt = encryptionModel.Salt;
 
-            _context.ResetPasswordTokens.Remove(resetToken);
-
+            await _loggingService.SaveAuditLog($"Updating user with user id {user.UserId}.", AuditActionEnum.Update);
             await _userRepository.UpdateAsync(user);
+            await _loggingService.SaveAuditLog($"Deleting reset token for user with user id {user.UserId}",
+                AuditActionEnum.Delete);
+            await _authenticationRepository.DeleteToken(resetToken);
 
             return Ok();
         }

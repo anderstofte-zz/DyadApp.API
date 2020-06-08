@@ -6,6 +6,7 @@ using DyadApp.API.Data.Repositories;
 using DyadApp.API.Hubs;
 using DyadApp.API.Providers;
 using DyadApp.API.Services;
+using DyadApp.Emails;
 using MailKit.Net.Smtp;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
@@ -18,6 +19,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 
 namespace DyadApp.API
 {
@@ -109,24 +111,33 @@ namespace DyadApp.API
                 });
 
             services.AddScoped<IAuthenticationService, AuthenticationService>();
-
+            services.AddTransient<ILoggingService, LoggingService>();
+            services.AddScoped<IAuditLogRepository, AuditLogRepository>();
             services.Configure<SmtpOptions>(Configuration.GetSection("Smtp"));
             services.AddTransient<SmtpClient>();
 
             services.AddTransient<IEmailService, EmailService>();
-            services.AddTransient<ISecretKeyService, SecretKeyService>();
+
+            services.AddEmailConfiguration(Configuration);
+
 
             services.AddTransient<IMatchService, MatchService>();
-
+            services.AddTransient<IChatService, ChatService>();
+            services.AddTransient<IUserService, UserService>();
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
             services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<IChatRepository, ChatRepository>();
+            services.AddScoped<IMatchRepository, MatchRepository>();
             services.AddScoped<IAuthenticationRepository, AuthenticationRepository>();
-
-            services.AddSignalR()
-                .AddHubOptions<ChatHub>(options => options.EnableDetailedErrors = true);
+            services.AddSignalR();
 
             services.AddSingleton<IUserIdProvider, NameUserIdProvider>();
+
+            services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "Dyad API", Version = "v1" });
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -137,15 +148,18 @@ namespace DyadApp.API
                 app.UseDeveloperExceptionPage();
             }
 
+            app.UseSwagger();
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Dyad API v1");
+
+            });
+
             app.UseHttpsRedirection();
 
             app.UseRouting();
 
             app.UseCors(CorsPolicy);
-
-            var websocketOptions = new WebSocketOptions();
-            websocketOptions.AllowedOrigins.Add(Configuration.GetSection("WebAppBaseAddress").Value);
-            app.UseWebSockets(websocketOptions);
 
             app.UseAuthentication();
             app.UseAuthorization();

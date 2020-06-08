@@ -1,35 +1,22 @@
-﻿using DyadApp.Emails.Models.EmailTypes;
-using HandlebarsDotNet;
+﻿using DyadApp.Emails.Models;
 using MimeKit;
 
 namespace DyadApp.Emails
 {
-    public class EmailGenerator
+    public static class EmailGenerator
     {
-        public static MimeMessage GenerateEmail<T>(T model, EmailTypeEnum emailType) where T : BaseEmail
+        public static MimeMessage GenerateEmail(EmailData data, string webAppBaseUrl)
         {
-            var message = new MimeMessage();
-            message.From.Add(new MailboxAddress("Dyad support", "support@dyadapp.com"));
-            message.To.Add(new MailboxAddress(model.To));
-            message.Subject = model.Subject;
-            message.Body = GenerateEmailBody(model, emailType);
-
-            return message;
-        }
-        private static MimeEntity GenerateEmailBody<T>(T templateData, EmailTypeEnum emailType) where T : BaseEmail
-        {
-            var template = emailType switch
+            switch (data.Type)
             {
-                EmailTypeEnum.Verification => System.IO.File.ReadAllText(
-                    "wwwroot\\EmailTemplates\\EmailVerification.html"),
-                EmailTypeEnum.PasswordRecovery => System.IO.File.ReadAllText(
-                    "wwwroot\\EmailTemplates\\PasswordRecovery.html")
-            };
-
-            var compiledTemplate = Handlebars.Compile(template);
-
-            var builder = new BodyBuilder { HtmlBody = compiledTemplate(templateData) };
-            return builder.ToMessageBody();
+                case EmailTypeEnum.Verification:
+                    return EmailFactory.CreateVerification(data, webAppBaseUrl);
+                case EmailTypeEnum.DataInsight:
+                    return EmailFactory.CreateDataInsight(data);
+            }
+            return data.Type == EmailTypeEnum.Verification ? 
+                EmailFactory.CreateVerification(data, webAppBaseUrl) : 
+                EmailFactory.CreateResetPassword(data, webAppBaseUrl);
         }
     }
 }

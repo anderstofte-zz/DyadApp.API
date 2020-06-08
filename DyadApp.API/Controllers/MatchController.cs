@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using DyadApp.API.Extensions;
 using DyadApp.API.Models;
 using DyadApp.API.Services;
-using DyadApp.API.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,22 +11,25 @@ namespace DyadApp.API.Controllers
     [Authorize]
     [ApiController]
     [Route("[controller]")]
-    public class MatchController : Controller
+    public class MatchController : ControllerBase
     {
-
         private readonly IMatchService _matchService;
-
-        public MatchController(IMatchService matchService)
+        private readonly ILoggingService _loggingService;
+        public MatchController(IMatchService matchService, ILoggingService loggingService)
         {
             _matchService = matchService;
+            _loggingService = loggingService;
         }
 
         [HttpPost("AwaitingMatch")]
         public async Task<IActionResult> AwaitingMatch()
         {
             var userId = User.GetUserId();
+
+            await _loggingService.SaveAuditLog($"Creating awating match for user with user id {userId}",
+                AuditActionEnum.Create);
+
             var isAddedToQueueOfAwaitingMatches = await _matchService.AddToAwaitingMatch(userId);
-            
             if (!isAddedToQueueOfAwaitingMatches)
             {
                 return BadRequest("Der gik noget galt.");
@@ -40,8 +42,11 @@ namespace DyadApp.API.Controllers
         public async Task<IActionResult> Match()
         {
             var userId = User.GetUserId();
-            var isMatchFound = await _matchService.SearchForMatch(userId);
 
+            await _loggingService.SaveAuditLog($"Match process initiated for user with user id {userId}",
+                AuditActionEnum.Match);
+
+            var isMatchFound = await _matchService.SearchForMatch(userId);
             if(!isMatchFound)
             {
                 return BadRequest();
@@ -49,23 +54,14 @@ namespace DyadApp.API.Controllers
             return Ok("Vi fandt et nyt match!");
         }
 
-        [HttpGet("RetreiveMatchList")]
-        public async Task<List<MatchViewModel>> RetreiveMatchList()
+        [HttpGet]
+        public async Task<List<MatchViewModel>> RetrieveMatches()
         {
             var userId = User.GetUserId();
-            return await _matchService.RetreiveMatchList(userId);
-        }
+            await _loggingService.SaveAuditLog($"Retrieving matches for user with user id {userId}",
+                AuditActionEnum.Read);
 
-        [HttpGet("{id}")]
-        public async Task<MatchConversationModel> FetchChat(int id)
-        {
-            return await _matchService.FetchChatMessages(id, User.GetUserId());
-        }
-
-        [HttpPost("Read/{id}")]
-        public async Task MessagesIsRead(int id)
-        {
-             await _matchService.MarkMessagesAsRead(id, User.GetUserId());
+            return await _matchService.RetrieveMatches(userId);
         }
     }
 }

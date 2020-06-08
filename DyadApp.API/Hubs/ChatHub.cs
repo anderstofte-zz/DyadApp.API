@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using DyadApp.API.Data;
 using DyadApp.API.Extensions;
+using DyadApp.API.Services;
 using DyadApp.API.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
@@ -15,20 +15,18 @@ namespace DyadApp.API.Hubs
 
     public class ChatHub : Hub
     {
-        private readonly DyadAppContext _context;
+        private readonly IChatService _chatService;
         public readonly Dictionary<int, string> Connections = new Dictionary<int, string>();
 
-        public ChatHub(DyadAppContext context)
+        public ChatHub(IChatService chatService)
         {
-            _context = context;
+            _chatService = chatService;
         }
 
         public async Task SendMessage(NewChatMessageModel model)
         {
             var userId = Context.User.GetUserId();
-
-            var chatMethods = new ChatMethods(_context);
-            await chatMethods.AddMessage(model);
+            await _chatService.AddMessage(model);
 
             var newChatMessage = new ChatMessageModel
             {

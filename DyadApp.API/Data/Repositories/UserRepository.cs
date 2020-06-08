@@ -36,29 +36,13 @@ namespace DyadApp.API.Data.Repositories
             return await _context.Users.Where(u => u.UserId == id).SingleOrDefaultAsync();
         }
 
-        public async Task<User> GetUserForPasswordUpdate(string token, string email)
+        public async Task<User> GetUserWithResetTokensByEmail(string email)
         {
-            return await _context.Users.Select(u => new User
-            {
-                UserId = u.UserId,
-                Name = u.Name,
-                Email = u.Email,
-                Password = u.Password,
-                Salt = u.Salt,
-                Verified = u.Verified,
-                Active = u.Active,
-                DateOfBirth = u.DateOfBirth,
-                ProfileImage = u.ProfileImage,
-                ResetPasswordTokens = u.ResetPasswordTokens
-            }).Where(x => x.Email == email).SingleOrDefaultAsync();
+            return await _context.Users.Include(x => x.ResetPasswordTokens).Where(x => x.Email == email)
+                .SingleOrDefaultAsync();
         }
 
-        public async Task<UserPassword> GetUserPasswordByUserId(int id)
-        {
-            return await _context.UserPasswords.Where(x => x.UserId == id).SingleOrDefaultAsync();
-        }
-
-        public async Task<User> GetByEmail(string email)
+        public async Task<User> GetUserByEmail(string email)
         {
             return await _context.Users.Where(x => x.Email == email).SingleOrDefaultAsync();
         }

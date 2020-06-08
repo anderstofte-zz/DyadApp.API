@@ -1,24 +1,25 @@
-﻿using DyadApp.API.Data;
-using DyadApp.API.Models;
-using System.Linq;
+﻿using DyadApp.API.Models;
 using System.Threading.Tasks;
 using DyadApp.API.Data.Repositories;
-using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
-using System.Diagnostics;
+using System.Linq;
 using DyadApp.API.Converters;
-using DyadApp.API.ViewModels;
+using DyadApp.API.Extensions;
+using Microsoft.Extensions.Configuration;
 
 namespace DyadApp.API.Services
 {
 	public class MatchService : IMatchService
 	{
-		private readonly DyadAppContext _context;
         private readonly IUserRepository _userRepository;
-		public MatchService(DyadAppContext context, IUserRepository userRepository)
+        private readonly IMatchRepository _matchRepository;
+        private readonly IConfiguration _configuration;
+
+		public MatchService(IUserRepository userRepository, IMatchRepository matchRepository, IConfiguration configuration)
         {
-            _context = context;
             _userRepository = userRepository;
+            _matchRepository = matchRepository;
+            _configuration = configuration;
         }
 
 		public async Task<bool> AddToAwaitingMatch(int userId)
@@ -29,35 +30,76 @@ namespace DyadApp.API.Services
             }
 
 			var awaitingMatch = new AwaitingMatch { UserId = userId };
-			_context.AwaitingMatches.Add(awaitingMatch);
-			await _context.SaveChangesAsync();
-
+            await _matchRepository.AddAwaitingMatch(awaitingMatch);
 			return true;
 		}
 
         private async Task<bool> UserIsAlreadyAwaitingAMatch(int userId)
         {
-            return await _context.AwaitingMatches.AnyAsync(x => x.UserId == userId);
+            var awaitingMatches = await _matchRepository.RetrieveAwaitingMatches();
+            return awaitingMatches.Any(x => x.UserId == userId && x.IsMatched == false);
         }
 
         public async Task <bool> SearchForMatch(int userId)
 		{
 			var userToMatch = await _userRepository.GetUserById(userId);
-
-            var awaitingMatch = await _context.AwaitingMatches.Where(aw =>
-                    !aw.IsMatched && aw.User.DateOfBirth.Year == userToMatch.DateOfBirth.Year && aw.UserId != userToMatch.UserId)
-                .OrderBy(x => x.Created).FirstOrDefaultAsync();
-
+            var awaitingMatch = await GetAwaitingMatchToMatchWithUser(userToMatch);
             if (awaitingMatch == null)
             {
                 return false;
             }
 
+            var isUserToMatchAndAwaitingMatchAlreadyMatched = await IsMatchUnique(userId, awaitingMatch.UserId);
+            if (isUserToMatchAndAwaitingMatchAlreadyMatched)
+            {
+                return false;
+            }
 
             awaitingMatch.IsMatched = true;
-            //TODO: lav user matches for de brugeres der er matchet
 
-            var userMatches = new List<UserMatch>
+            var userMatches = CreateUserMatches(userToMatch, awaitingMatch);
+
+            var match = new Match
+            {
+                UserMatches = userMatches
+            };
+
+            await _matchRepository.UpdateAwaitingMatch(awaitingMatch);
+            await _matchRepository.AddMatch(match);
+            return true;
+        }
+
+        private async Task<AwaitingMatch> GetAwaitingMatchToMatchWithUser(User userToMatch)
+        {
+            var awaitingMatches = await _matchRepository.RetrieveAwaitingMatches();
+            if (awaitingMatches == null)
+            {
+                return null;
+            }
+
+            var filteredAndSortedAwaitingMatches = awaitingMatches.Where(x =>
+                    x.User.DateOfBirth.Year == userToMatch.DateOfBirth.Year && x.UserId != userToMatch.UserId)
+                .OrderBy(x => x.Created);
+
+            return filteredAndSortedAwaitingMatches?.FirstOrDefault();
+        }
+
+        private async Task<bool> IsMatchUnique(int userId, int awaitingMatchUserId)
+        {
+            var userMatches = await _matchRepository.RetrieveUserMatches();
+            if (userMatches == null)
+            {
+                return false;
+            }
+
+            var filteredUserMatches = userMatches.Where(x => x.UserId == userId || x.UserId == awaitingMatchUserId).ToList();
+            var usersAreAlreadyMatched = filteredUserMatches.GroupBy(x => x.MatchId).Any(x => x.Count() == 2);
+            return usersAreAlreadyMatched;
+        }
+
+        private static List<UserMatch> CreateUserMatches(User userToMatch, AwaitingMatch awaitingMatch)
+        {
+            return new List<UserMatch>
             {
                 new UserMatch
                 {
@@ -68,58 +110,13 @@ namespace DyadApp.API.Services
                     UserId = awaitingMatch.UserId
                 }
             };
-
-            //TODO: lav et match
-
-            var match = new Match
-            {
-                UserMatches = userMatches
-            };
-
-            _context.AwaitingMatches.Update(awaitingMatch);
-            await _context.SaveChangesAsync();
-            _context.Matches.Add(match);
-            await _context.SaveChangesAsync();
-            return true;
         }
 
-		public async Task<List<MatchViewModel>> RetreiveMatchList(int userId)
-		{
-            var matches = await _context.Matches
-                .Include(x => x.UserMatches)
-                .ThenInclude(um => um.User)
-                .Include(x => x.ChatMessages)
-                .Where(x => x.UserMatches.Any(z => z.UserId == userId))
-                .ToListAsync();
-
-            return matches.ToMatchViewToModel(userId);
-        }
-
-        public async Task<MatchConversationModel> FetchChatMessages(int matchId, int userId)
+        public async Task<List<MatchViewModel>> RetrieveMatches(int userId)
         {
-            var match = await _context.Matches
-                .Include(x => x.ChatMessages)
-                .Include(x => x.UserMatches)
-                .ThenInclude(um => um.User)
-                .Where(x => x.MatchId == matchId)
-                .SingleOrDefaultAsync();
-            
-            return match.ToChatMessageModels(userId);
-        }
-
-        public async Task MarkMessagesAsRead(int matchId, int userId)
-        {
-            var match = await _context.Matches.Include(x => x.ChatMessages).Where(x => x.MatchId == matchId)
-                .SingleOrDefaultAsync();
-
-            var chatMessages = match.ChatMessages.Where(x => x.ReceiverId == userId).Select(x =>
-            {
-                x.IsRead = true;
-                return x;
-            }).ToList();
-
-            _context.ChatMessages.UpdateRange(chatMessages);
-            await _context.SaveChangesAsync();
+            var matches = await _matchRepository.RetrieveMatches(userId);
+            var encryptionKey = _configuration.GetEncryptionKey();
+            return matches.ToMatchViewToModel(userId, encryptionKey);
         }
     }
 }

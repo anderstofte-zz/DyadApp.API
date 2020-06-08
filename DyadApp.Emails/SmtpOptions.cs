@@ -1,6 +1,6 @@
 ﻿using MailKit.Security;
 
-namespace DyadApp.API.Data
+namespace DyadApp.Emails
 {
     public class SmtpOptions
     {
