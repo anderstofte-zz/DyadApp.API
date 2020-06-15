@@ -6,7 +6,7 @@ namespace DyadApp.API.Providers
     {
         public string GetUserId(HubConnectionContext connection)
         {
-            return connection.User?.Identity?.Name;
+            return connection.User?.Identity?.Name ?? "0";
         }
     }
 }

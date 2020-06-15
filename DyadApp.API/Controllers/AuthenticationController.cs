@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Threading.Tasks;
+using DyadApp.API.Data;
 using DyadApp.API.Data.Repositories;
 using DyadApp.API.Extensions;
 using DyadApp.API.Helpers;
 using DyadApp.API.Models;
 using DyadApp.API.Services;
 using DyadApp.API.ViewModels;
-using DyadApp.Emails;
 using DyadApp.Emails.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -23,7 +23,8 @@ namespace DyadApp.API.Controllers
         private readonly IConfiguration _configuration;
         private readonly IEmailService _emailService;
         private readonly ILoggingService _loggingService;
-        public AuthenticationController(IAuthenticationService authenticationService, IEmailService emailService, IAuthenticationRepository authenticationRepository, IUserRepository userRepository, ILoggingService loggingService, IConfiguration configuration)
+        private readonly DyadAppContext _context;
+        public AuthenticationController(IAuthenticationService authenticationService, IEmailService emailService, IAuthenticationRepository authenticationRepository, IUserRepository userRepository, ILoggingService loggingService, IConfiguration configuration, DyadAppContext context)
         {
             _authenticationService = authenticationService;
             _emailService = emailService;
@@ -31,6 +32,7 @@ namespace DyadApp.API.Controllers
             _userRepository = userRepository;
             _loggingService = loggingService;
             _configuration = configuration;
+            _context = context;
         }
 
         [HttpPost]
@@ -46,7 +48,7 @@ namespace DyadApp.API.Controllers
             var user = await _authenticationRepository.GetUserByEmail(model.Email);
             if (user == null || !user.ValidatePassword(model.Password))
             {
-                return BadRequest("Der findes ingen brugere med de indtastede oplysninger.");
+                return NotFound("Der findes ingen brugere med de indtastede oplysninger.");
             }
 
             if (!user.Verified)
@@ -71,25 +73,25 @@ namespace DyadApp.API.Controllers
             return await _authenticationService.VerifySignup(signup);
         }
 
-        [HttpPost("Refresh")]
-        public async Task<IActionResult> RefreshTokens([FromBody]AuthenticationTokens authenticationTokens)
+        [HttpPost("Renew")]
+        public async Task<IActionResult> RenewTokens([FromBody]AuthenticationTokens authenticationTokens)
         {
-            await _loggingService.SaveAuditLog($"Refreshing tokens for user with user id {User.GetUserId()}",
-                AuditActionEnum.TokenRefresh);
             int userId;
             try
             {
                 userId = authenticationTokens.GetUserIdFromClaims(_configuration.GetSecretKey());
+                await _loggingService.SaveAuditLog($"Refreshing tokens for user with user id {userId}",
+                    AuditActionEnum.TokenRefresh);
             }
             catch (Exception)
             {
-                return BadRequest("Access token is invalid.");
+                return BadRequest();
             }
 
             var refreshToken = await RetrieveRefreshToken(authenticationTokens.RefreshToken, userId);
-            if (refreshToken == null)
+            if (refreshToken == null || !_authenticationService.IsRefreshTokenValid(refreshToken))
             {
-                return BadRequest("Refresh token is invalid.");
+                return BadRequest();
             }
 
             var newTokens = await _authenticationService.GenerateTokens(userId);
@@ -150,7 +152,7 @@ namespace DyadApp.API.Controllers
             var user = await _userRepository.GetUserWithResetTokensByEmail(model.Email);
             if (user == null)
             {
-                return BadRequest("Der findes ingen brugere med den indtastede email.");
+                return NotFound("Der findes ingen brugere med den indtastede email.");
             }
 
             var resetToken = user.ResetPasswordTokens.Find(x => x.Token == model.Token);

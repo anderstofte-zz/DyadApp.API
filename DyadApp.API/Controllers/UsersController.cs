@@ -7,7 +7,6 @@ using DyadApp.API.Helpers;
 using DyadApp.API.Models;
 using DyadApp.API.Services;
 using DyadApp.API.ViewModels;
-using DyadApp.Emails;
 using DyadApp.Emails.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;

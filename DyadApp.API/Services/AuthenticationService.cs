@@ -79,6 +79,11 @@ namespace DyadApp.API.Services
             }
         }
 
+        public bool IsRefreshTokenValid(RefreshToken token)
+        {
+            return token.ExpirationDate > DateTime.Now;
+        }
+
         public async Task<AuthenticationTokens> GenerateTokens(int userId)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
@@ -106,7 +111,7 @@ namespace DyadApp.API.Services
                 {
                     new Claim(ClaimTypes.Name, userId.ToString())
                 }),
-                Expires = DateTime.Now.AddMinutes(30),
+                Expires = DateTime.Now.AddSeconds(30),
                 IssuedAt = DateTime.Now,
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
             };

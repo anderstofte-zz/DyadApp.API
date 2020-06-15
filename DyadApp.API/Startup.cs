@@ -49,7 +49,6 @@ namespace DyadApp.API
                         builder.
                             WithOrigins(
                                 "http://localhost:8080",
-                                "http://localhost:8080/",
                                 "https://dev.dyadapp.com",
                                 "https://app.dyadapp.com",
                                 "https://dyadapp.com"

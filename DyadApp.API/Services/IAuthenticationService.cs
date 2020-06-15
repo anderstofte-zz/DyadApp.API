@@ -9,6 +9,7 @@ namespace DyadApp.API.Services
         Task<IActionResult> Authenticate(string email, string password);
         Task<Signup> GetSignup(string token);
         Task<IActionResult> VerifySignup(Signup signup);
+        bool IsRefreshTokenValid(RefreshToken token);
         Task<AuthenticationTokens> GenerateTokens(int userId);
     }
 }
