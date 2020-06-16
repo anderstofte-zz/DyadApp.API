@@ -111,7 +111,7 @@ namespace DyadApp.API.Services
                 {
                     new Claim(ClaimTypes.Name, userId.ToString())
                 }),
-                Expires = DateTime.Now.AddSeconds(30),
+                Expires = DateTime.Now.AddMinutes(30),
                 IssuedAt = DateTime.Now,
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
             };
