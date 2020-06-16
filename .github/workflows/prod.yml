@@ -34,6 +34,6 @@ jobs:
       with:
         host: nt39.unoeuro.com
         user: dyadapp.com
-        password: D2F9hBgr4ftw
+        password: PLRhxmWqalCcVfVK0tvRXOw7bobuov
         local-dir: publish
         remote-dir: api
