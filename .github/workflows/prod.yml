@@ -18,11 +18,11 @@ jobs:
       with:
         dotnet-version: 3.1.101
     - name: Install dependencies
-      run: dotnet restore /home/runner/work/DyadApp.API/DyadApp.API/DyadApp.API/DyadApp.API.csproj
+      run: dotnet restore /home/runner/work/DyadApp.API/DyadApp.API/DyadApp.Tests/DyadApp.Tests.csproj
     - name: Build
-      run: dotnet build /home/runner/work/DyadApp.API/DyadApp.API/DyadApp.API/DyadApp.API.csproj --configuration Release --no-restore
+      run: dotnet build /home/runner/work/DyadApp.API/DyadApp.API/DyadApp.Tests/DyadApp.Tests.csproj --configuration Release --no-restore
     - name: Test
-      run: dotnet test /home/runner/work/DyadApp.API/DyadApp.API/DyadApp.API/DyadApp.API.csproj --no-restore --verbosity normal
+      run: dotnet test /home/runner/work/DyadApp.API/DyadApp.API/DyadApp.Tests/DyadApp.Tests.csproj
     - name: Get flyway
       run: wget -qO- https://repo1.maven.org/maven2/org/flywaydb/flyway-commandline/6.3.3/flyway-commandline-6.3.3-linux-x64.tar.gz | tar xvz && sudo ln -s `pwd`/flyway-6.3.3/flyway /usr/local/bin
     - name: Run migration on database
